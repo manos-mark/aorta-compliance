@@ -1,0 +1,18 @@
+from PyInstaller.utils.hooks import collect_submodules
+
+a = collect_submodules('h5py')
+b = ["pydicom", "pydicom.encoders.gdcm", "pydicom.encoders.pylibjpeg",
+                "tensorflow", "tensorflow._api.v2.compat.v2.compat.v1.v1",
+                "tensorflow._api.v2.compat.v1.compat.v2.v2",
+                "tensorflow._api.v2.compat.v1.compat.v2.summary",
+                "tensorflow._api.v2.compat.v2.estimator",
+                "tensorflow._api.v2.compat.v1.compat.v1.estimator",
+                "tensorflow._api.v2.compat.v2.compat.v2.v2",
+                "tensorflow._api.v2.compat.v2.compat.v2.summary",
+                "tensorflow._api.v2.compat.v1.compat.v1.v1",
+                "tensorflow._api.v2.compat.v1.v1",
+                "tensorflow._api.v2.compat.v1.compat.v2.estimator",
+                "tensorflow._api.v2.compat.v2.compat.v1.estimator",
+                "tensorflow._api.v2.compat.v2.v2"
+                ]
+hidden_imports = a + b

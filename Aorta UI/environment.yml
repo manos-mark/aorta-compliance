@@ -1,0 +1,8 @@
+name: tf24
+channels:
+  - intel
+  - abinit
+  - matsci
+  - conda-forge
+  - defaults
+prefix: /Users/faaronts/opt/anaconda3/envs/tf24

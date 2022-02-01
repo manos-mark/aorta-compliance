@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.dcm
+*.png
+.idea
+.DS_Store
+*.spec
+*.h5
+/dataset
+/papers
