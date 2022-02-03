@@ -10,9 +10,9 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'patients') # = 'D:\\Vibot\\thesis\\dataset\\patients'
-DICOMS_PATH = os.path.join('..', 'dataset', 'dicoms') # = 'D:\\Vibot\\thesis\\dataset\\dicoms'
-MASKS_PATH = os.path.join('..', 'dataset', 'masks') # = 'D:\\Vibot\\thesis\\dataset\\masks'
+DATASET_FOLDER_PATH = os.path.join('dataset', 'patients') # = 'D:\\Vibot\\thesis\\dataset\\patients'
+DICOMS_PATH = os.path.join('dataset', 'dicoms') # = 'D:\\Vibot\\thesis\\dataset\\dicoms'
+MASKS_PATH = os.path.join('dataset', 'masks') # = 'D:\\Vibot\\thesis\\dataset\\masks'
 
 
 def create_dir(path):
