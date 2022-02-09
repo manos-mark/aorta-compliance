@@ -11,7 +11,7 @@ from tqdm import tqdm
 from natsort import natsorted
 
 DATASET_FOLDER_PATH = os.path.join('dataset', 'patients') # = 'D:\\Vibot\\thesis\\dataset\\patients'
-DICOMS_PATH = os.path.join('dataset', 'dicoms') # = 'D:\\Vibot\\thesis\\dataset\\dicoms'
+DICOMS_PATH = os.path.join('dataset', 'images') # = 'D:\\Vibot\\thesis\\dataset\\dicoms'
 MASKS_PATH = os.path.join('dataset', 'masks') # = 'D:\\Vibot\\thesis\\dataset\\masks'
 
 
@@ -21,20 +21,21 @@ def create_dir(path):
         os.makedirs(path)
 
 
-def generate_polygon(image, points, display=False):
+def generate_polygon(image_path, points, display=False):
+    image = dcmread(image_path)
     polygon = Image.new("L", (image.Columns, image.Rows))
 
     draw = ImageDraw.Draw(polygon)
-    draw.polygon(points, fill="red")
+    draw.polygon(points, fill=1)
 
-    polygon = np.array(polygon)
+    polygon = np.array(polygon).astype(bool)
+    image = image.pixel_array
 
-    # image = image.pixel_array
-    # mask = np.bitwise_and(image, polygon)
-    
     if display:
-        plt.imshow(image, cmap='gray')
-        plt.imshow(polygon, cmap='jet', alpha=0.2)
+        fig, ax = plt.subplots()
+        ax.imshow(image, cmap='gray')
+        ax.imshow(polygon, cmap='jet', alpha=0.2)
+        ax.set_title(image_path)
         plt.show()
 
     return polygon
@@ -44,8 +45,8 @@ if __name__ == '__main__':
     create_dir(DICOMS_PATH)
     create_dir(MASKS_PATH)
 
-    dicoms_path = natsorted(glob.glob('../**/*.dcm', recursive=True))
-    masks_path = natsorted(glob.glob('../**/ComplianceAscending.json', recursive=True))
+    dicoms_path = natsorted(glob.iglob('/**/*.dcm', recursive=True))
+    masks_path = natsorted(glob.iglob('/**/ComplianceAscending.json', recursive=True))
 
     for mask_path in tqdm(masks_path):
         # Open contours file
@@ -73,10 +74,10 @@ if __name__ == '__main__':
                 patient_id = image_path[-1]
             
                 image_path = os.sep.join(image_path)
-                image = dcmread(os.path.join(image_path, slide_id))
+                image_path = os.path.join(image_path, slide_id)
 
                 # Generate ROI's polygon 
-                polygon = generate_polygon(image, points_list)
+                polygon = generate_polygon(image_path, points_list)
 
                 # Save ROI image
                 slide_name = slide_id.split(".")[:-1]
@@ -86,8 +87,8 @@ if __name__ == '__main__':
                 mask_name = case_id + '_' + patient_id + '_' + slide_name
                 dicom_name = case_id + '_' + patient_id + '_' + slide_id
 
-                plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon)
-                shutil.copyfile(f'{os.path.join(image_path, slide_id)}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
+                plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
+                shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
                 # image.save_as(f'{os.path.join(DICOMS_PATH, dicom_name)}')
 
     # # Iterate through folders and file all files and folder

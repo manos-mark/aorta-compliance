@@ -1,5 +1,6 @@
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, Input
 from tensorflow.keras.models import Model
+from tensorflow import keras
 
 def conv_block(input, num_filters):
     x = Conv2D(num_filters, 3, padding="same")(input)
@@ -23,8 +24,11 @@ def decoder_block(input, skip_features, num_filters):
     x = conv_block(x, num_filters)
     return x
 
-def build_unet(input_shape):
+def build_unet(input_shape, preprocessing=None):
     inputs = Input(input_shape)
+    
+    if type(preprocessing) == keras.Sequential:
+        inputs = preprocessing(inputs)
 
     s1, p1 = encoder_block(inputs, 64)
     s2, p2 = encoder_block(p1, 128)

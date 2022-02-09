@@ -11,13 +11,15 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Recall, Precision
 import pydicom as dicom
 from natsort import natsorted
+from keras.preprocessing.image import ImageDataGenerator
 
-from metrics import dice_loss, dice_coef, iou
-from unet_model import build_unet
+from scripts.metrics import dice_loss, dice_coef, iou
+from scripts.unet_model import build_unet
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
-H = 512
-W = 512
+H = 256
+W = 256
 
 def create_dir(path):
     """ Create a directory. """
@@ -25,7 +27,7 @@ def create_dir(path):
         os.makedirs(path)
 
 def load_data(path, split=0.1):
-    images = natsorted(glob(os.path.join(path, "dicoms", "*.dcm")))
+    images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
     split_size = int(len(images) * split)
@@ -45,7 +47,7 @@ def read_image(path):
     # x = np.array(dcm)
     # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     x = cv2.resize(dcm, (W, H))
-    x = x/255.0
+    x = x/np.max(x)
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
     return x
@@ -71,6 +73,7 @@ def tf_parse(x, y):
     x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
     x.set_shape([H, W, 1])
     y.set_shape([H, W, 1])
+    print(x.shape)
     return x, y
 
 def tf_dataset(X, Y, batch=8):
@@ -79,7 +82,20 @@ def tf_dataset(X, Y, batch=8):
     dataset = dataset.map(tf_parse)
     dataset = dataset.batch(batch)
     dataset = dataset.prefetch(4)
+    
+    print(np.array(dataset.as_numpy_iterator()).nbytes)
     return dataset
+
+def augment_data(data):
+    image_data_gen_args = dict(
+            rotation_range=90,
+            width_shift_range=0.3,
+            height_shift_range=0.3,
+            shear_range=0.5,
+            zoom_range=0.3,
+            horizontal_flip=True,
+            fill_mode='reflect',
+        )
 
 if __name__ == "__main__":
     """ Seeding """
@@ -97,32 +113,59 @@ if __name__ == "__main__":
     csv_path = os.path.join("output", "data.csv")
 
     """ Dataset """
-    dataset_path = "D:\\Vibot\\thesis\\dataset\\"
+    dataset_path = os.path.join('.', 'dataset')
+    
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
-
+    
     print(f"Train: {len(train_x)} - {len(train_y)}")
     print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
-
+    
     train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
-
+    
+    """ Data augmentation layers """
+    data_augmentation = None
+    # data_augmentation = tf.keras.Sequential([
+    #   tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal"),
+    #     tf.keras.layers.experimental.preprocessing.RandomRotation(0.2), 
+    #    tf.keras.layers.experimental.preprocessing.RandomZoom(height_factor=(0.2, 0.3), width_factor=(0.2, 0.3)),
+    #    tf.keras.layers.experimental.preprocessing.RandomTranslation(0.3, 0.3, fill_mode='reflect', interpolation='bilinear',)
+    # ])
+    
     """ Model """
-    model = build_unet((H, W, 1))
+    model = build_unet((H, W, 1), data_augmentation)
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
-    model.summary()
+    """ Preview a random image and mask after processing """
+    from itertools import islice, count
+    import matplotlib.pyplot as plt
+    import random 
+    rand = random.randint(0, len(train_dataset))
+    train_image_iter, train_mask_iter = next(islice(train_dataset, rand, None))
+    for i in range(0, 1):
+        image = train_image_iter[i]
+        mask = train_mask_iter[i]
+        plt.subplot(1,3,1)
+        plt.imshow(image, cmap='gray')
+        plt.subplot(1,3,2)
+        plt.imshow(mask, cmap='gray')
+        plt.subplot(1,3,3)
+        plt.hist(image[:,:,0])
+        plt.show()
 
-    callbacks = [
-        ModelCheckpoint(model_path, verbose=1, save_best_only=True),
-        ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
-        CSVLogger(csv_path)
-    ]
+    # model.summary()
 
-    model.fit(
-        train_dataset,
-        epochs=num_epochs,
-        validation_data=valid_dataset,
-        callbacks=callbacks
-    )
+    # callbacks = [
+    #     ModelCheckpoint(model_path, verbose=1, save_best_only=True),
+    #     ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
+    #     CSVLogger(csv_path)
+    # ]
+
+    # model.fit(
+    #     train_dataset,
+    #     epochs=num_epochs,
+    #     validation_data=valid_dataset,
+    #     callbacks=callbacks
+    # )
