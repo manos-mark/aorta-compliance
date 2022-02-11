@@ -1,6 +1,8 @@
 
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+
 import numpy as np
 import cv2
 from glob import glob
@@ -86,16 +88,6 @@ def tf_dataset(X, Y, batch=8):
     print(np.array(dataset.as_numpy_iterator()).nbytes)
     return dataset
 
-def augment_data(data):
-    image_data_gen_args = dict(
-            rotation_range=90,
-            width_shift_range=0.3,
-            height_shift_range=0.3,
-            shear_range=0.5,
-            zoom_range=0.3,
-            horizontal_flip=True,
-            fill_mode='reflect',
-        )
 
 if __name__ == "__main__":
     """ Seeding """
@@ -108,7 +100,7 @@ if __name__ == "__main__":
     """ Hyperparameters """
     batch_size = 2
     lr = 1e-5
-    num_epochs = 10
+    num_epochs = 200
     model_path = os.path.join("output", "model.h5")
     csv_path = os.path.join("output", "data.csv")
 
@@ -139,33 +131,33 @@ if __name__ == "__main__":
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
     """ Preview a random image and mask after processing """
-    from itertools import islice, count
-    import matplotlib.pyplot as plt
-    import random 
-    rand = random.randint(0, len(train_dataset))
-    train_image_iter, train_mask_iter = next(islice(train_dataset, rand, None))
-    for i in range(0, 1):
-        image = train_image_iter[i]
-        mask = train_mask_iter[i]
-        plt.subplot(1,3,1)
-        plt.imshow(image, cmap='gray')
-        plt.subplot(1,3,2)
-        plt.imshow(mask, cmap='gray')
-        plt.subplot(1,3,3)
-        plt.hist(image[:,:,0])
-        plt.show()
+    # from itertools import islice, count
+    # import matplotlib.pyplot as plt
+    # import random 
+    # rand = random.randint(0, len(train_dataset))
+    # train_image_iter, train_mask_iter = next(islice(train_dataset, rand, None))
+    # for i in range(0, 1):
+    #     image = train_image_iter[i]
+    #     mask = train_mask_iter[i]
+    #     plt.subplot(1,3,1)
+    #     plt.imshow(image, cmap='gray')
+    #     plt.subplot(1,3,2)
+    #     plt.imshow(mask, cmap='gray')
+    #     plt.subplot(1,3,3)
+    #     plt.hist(image[:,:,0])
+    #     plt.show()
 
     # model.summary()
 
-    # callbacks = [
-    #     ModelCheckpoint(model_path, verbose=1, save_best_only=True),
-    #     ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
-    #     CSVLogger(csv_path)
-    # ]
+    callbacks = [
+        ModelCheckpoint(model_path, verbose=1, save_best_only=True),
+        ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
+        CSVLogger(csv_path)
+    ]
 
-    # model.fit(
-    #     train_dataset,
-    #     epochs=num_epochs,
-    #     validation_data=valid_dataset,
-    #     callbacks=callbacks
-    # )
+    model.fit(
+        train_dataset,
+        epochs=num_epochs,
+        validation_data=valid_dataset,
+        callbacks=callbacks
+    )
