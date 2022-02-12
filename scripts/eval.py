@@ -15,8 +15,8 @@ from itertools import islice
 import matplotlib.pyplot as plt
 import pandas as pd
 
-H = 512
-W = 512
+H = 256
+W = 256
 
 if __name__ == "__main__":
     """ Seeding """
@@ -46,38 +46,49 @@ if __name__ == "__main__":
     slices = tf.data.Dataset.from_tensor_slices(dataset_list)
     
     
+    dices  = []
+    ious = []
     for i, sl in enumerate(slices):
-        test_image_iter, test_mask_iter = next(islice(slices, i, None))
+        test_image, test_mask = next(islice(slices, i, None))
         
-        for j in range(0, 1):
-            test_image = test_image_iter[j]
-            test_mask = test_mask_iter[j]
+
+        # for j in range(0, 1):
+            # test_image = test_image_iter[j]
+            # test_mask = test_mask_iter[j]
             
-            """ Extracing the image name. """
-            # image_name = test_image.split("/")[-1]
-            
-            """ Predicting the mask """
-            y_pred = model.predict(np.expand_dims(test_image, axis=0))[0] > 0.5
-            y_pred = y_pred.astype(np.int32)
-            
-            plt.subplot(2,2,1, title='Gound truth mask')
-            plt.imshow(test_mask, cmap='gray')
-            plt.subplot(2,2,2, title='Gound truth image & mask')
-            plt.imshow(test_image, cmap='gray')
-            plt.imshow(test_mask, cmap='jet', alpha=0.2)
-            
-            plt.subplot(2,2,3, title='Predicted mask')
-            plt.imshow(y_pred, cmap='gray')
-            plt.subplot(2,2,4, title='Predicted image & mask')
-            plt.imshow(test_image, cmap='gray')
-            final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
-            plt.tight_layout()
-            
-            """ Saving the predicted mask along with the image and GT """
-            save_image_path = os.path.join('.', 'results', str(i))
-            plt.savefig(save_image_path)
+        """ Extracing the image name. """
+        # image_name = test_image.split("/")[-1]
+        
+        """ Predicting the mask """
+        y_pred = model.predict(test_image)[0] > 0.5
+        y_pred = y_pred.astype(np.float32)
+        
+        
+        # for num in tqdm(nums):
+        dices.append(dice_coef(np.expand_dims(test_mask, axis=0), np.expand_dims(y_pred, axis=0)))
+        ious.append(iou(test_mask, y_pred))
+        
+        # plt.subplot(2,2,1, title='Gound truth mask')
+        # plt.imshow(test_mask, cmap='gray')
+        # plt.subplot(2,2,2, title='Gound truth image & mask')
+        # plt.imshow(test_image, cmap='gray')
+        # plt.imshow(test_mask, cmap='jet', alpha=0.2)
+        
+        # plt.subplot(2,2,3, title='Predicted mask')
+        # plt.imshow(y_pred, cmap='gray')
+        # plt.subplot(2,2,4, title='Predicted image & mask')
+        # plt.imshow(test_image, cmap='gray')
+        # final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
+        # plt.tight_layout()
+        
+        # """ Saving the predicted mask along with the image and GT """
+        # save_image_path = os.path.join('.', 'results', str(i))
+        # plt.savefig(save_image_path)
+
+        # plt.show()
     
-            plt.show()
+    print("Test Dice Coef mean: ", np.mean(np.array(dices)))
+    print("Test IoU mean: ", np.mean(np.array(ious)))
             
     log_data = pd.read_csv(os.path.join('.', 'output', 'data.csv'))
     
