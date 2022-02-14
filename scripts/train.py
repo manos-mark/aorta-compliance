@@ -8,20 +8,21 @@ import cv2
 from glob import glob
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from tensorflow.keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau
+from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint, CSVLogger, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Recall, Precision
 import pydicom as dicom
 from natsort import natsorted
 from keras.preprocessing.image import ImageDataGenerator
+import skimage
 
 from scripts.metrics import dice_loss, dice_coef, iou
 from scripts.unet_model import build_unet
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
-H = 256
-W = 256
+H = 512
+W = 512
 
 def create_dir(path):
     """ Create a directory. """
@@ -29,7 +30,7 @@ def create_dir(path):
         os.makedirs(path)
 
 def load_data(path, split=0.1):
-    images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
     split_size = int(len(images) * split)
@@ -48,7 +49,8 @@ def read_image(path):
     # x = cv2.imread(path, cv2.IMREAD_COLOR)
     # x = np.array(dcm)
     # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = cv2.resize(dcm, (W, H))
+    # x = cv2.resize(dcm, (W, H))
+    x = skimage.transform.resize(dcm, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     x = x/np.max(x)
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
@@ -56,7 +58,8 @@ def read_image(path):
 
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = cv2.resize(x, (W, H))
+    # x = cv2.resize(x, (W, H))
+    x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     x = x/np.max(x)
     x = x > 0.5
     x = x.astype(np.float32)
@@ -78,7 +81,7 @@ def tf_parse(x, y):
     print(x.shape)
     return x, y
 
-def tf_dataset(X, Y, batch=8):
+def tf_dataset(X, Y, batch=2):
     dataset = tf.data.Dataset.from_tensor_slices((X, Y))
     dataset = dataset.shuffle(buffer_size=200)
     dataset = dataset.map(tf_parse)
@@ -147,12 +150,16 @@ if __name__ == "__main__":
     #     plt.hist(image[:,:,0])
     #     plt.show()
 
-    # model.summary()
+    model.summary()
+
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     callbacks = [
+        TensorBoard(log_dir=log_dir, histogram_freq=1),
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
         ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
-        CSVLogger(csv_path)
+        CSVLogger(csv_path),
+        EarlyStopping(monitor='val_loss', patience=10)
     ]
 
     model.fit(
