@@ -112,9 +112,9 @@ if __name__ == "__main__":
     
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
-    print(f"Train: {len(train_x)} - {len(train_y)}")
-    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
-    print(f"Test: {len(test_x)} - {len(test_y)}")
+    # print(f"Train: {len(train_x)} - {len(train_y)}")
+    # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
+    # print(f"Test: {len(test_x)} - {len(test_y)}")
     
     train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
