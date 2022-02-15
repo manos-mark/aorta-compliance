@@ -14,7 +14,8 @@ from tensorflow.keras.metrics import Recall, Precision
 import pydicom as dicom
 from natsort import natsorted
 from keras.preprocessing.image import ImageDataGenerator
-import skimage
+import skimage.transform
+import datetime
 
 from scripts.metrics import dice_loss, dice_coef, iou
 from scripts.unet_model import build_unet
@@ -29,7 +30,7 @@ def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def load_data(path, split=0.1):
+def load_data(path, split=0.3):
     images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
     # Subsplit data for fast testing of models
-    train_x, _, train_y, _ = train_test_split(train_x, train_y, test_size=0.2, random_state=42)
+    # train_x, _, train_y, _ = train_test_split(train_x, train_y, test_size=0.2, random_state=42)
     
     # print(f"Train: {len(train_x)} - {len(train_y)}")
     # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
