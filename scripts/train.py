@@ -112,6 +112,9 @@ if __name__ == "__main__":
     
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
+    # Subsplit data for fast testing of models
+    train_x, _, train_y, _ = train_test_split(train_x, train_y, test_size=0.2, random_state=42)
+    
     # print(f"Train: {len(train_x)} - {len(train_y)}")
     # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     # print(f"Test: {len(test_x)} - {len(test_y)}")
