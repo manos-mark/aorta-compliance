@@ -32,6 +32,7 @@ def create_dir(path):
 
 def load_data(path, split=0.3):
     images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
+    images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
     split_size = int(len(images) * split)
@@ -79,17 +80,17 @@ def tf_parse(x, y):
     x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
     x.set_shape([H, W, 1])
     y.set_shape([H, W, 1])
-    print(x.shape)
+    
     return x, y
 
 def tf_dataset(X, Y, batch=2):
     dataset = tf.data.Dataset.from_tensor_slices((X, Y))
+    dataset = dataset.cache()
     dataset = dataset.shuffle(buffer_size=200)
     dataset = dataset.map(tf_parse)
     dataset = dataset.batch(batch)
-    dataset = dataset.prefetch(4)
+    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
     
-    print(np.array(dataset.as_numpy_iterator()).nbytes)
     return dataset
 
 
