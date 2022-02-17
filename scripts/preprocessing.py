@@ -208,7 +208,7 @@ def equalize_histogram(image, display=True):
     
     return img_rescale
     
-def upscale_with_padding(img, new_image_size=(512, 512),color=(0,0,0)):
+def upscale_with_padding(img, new_image_size=(256, 256),color=(0,0,0)):
     """
     This function used in order to keep the geometry of the image the same during the resize method.
     """
