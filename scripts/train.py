@@ -54,7 +54,7 @@ def read_image(path):
     # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     # x = cv2.resize(dcm, (W, H))
     # x = skimage.transform.resize(dcm, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
-    x = upscale_with_padding(dcm, W, H)
+    x = upscale_with_padding(dcm, (W, H))
     x = x/np.max(x)
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
@@ -64,7 +64,7 @@ def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     # x = cv2.resize(x, (W, H))
     # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
-    x = upscale_with_padding(dcm, W, H)
+    x = upscale_with_padding(dcm, (W, H))
     x = x/np.max(x)
     x = x > 0.5
     x = x.astype(np.float32)
