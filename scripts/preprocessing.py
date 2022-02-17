@@ -320,37 +320,38 @@ def normalize(image):
     return x
 
 
-IMAGES_PATH = os.path.join('dataset', 'images')
-MASKS_PATH = os.path.join('dataset', 'masks')
-
-images = [pydicom.read_file(IMAGES_PATH + os.sep + s) for s in natsorted(os.listdir(IMAGES_PATH))]
-# masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
-
-random.shuffle(images)
-
-rand_images = []
-for j in range(20):
-    rand = random.randint(0, len(images)-1)
-    rand_images.append(images[rand].pixel_array)
+if __name__ == "__main__":
+    IMAGES_PATH = os.path.join('dataset', 'images')
+    MASKS_PATH = os.path.join('dataset', 'masks')
     
-# rand_images = [n4_bias_field_correction(i) for i in rand_images]
-rand_images = [normalize(i) for i in rand_images]
-# rand_images = [bm3d_denoising(i) for i in rand_images]
-rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
-# rand_images = [equalize_histogram(i) for i in rand_images]
-
-# rand_images = [resize(i.pixel_array) for i in rand_images]
-# rand_images = [standardization(i) for i in rand_images]
-# rand_images = [intensity_range_standardization(i) for i in rand_images]
-
-# image_after = images[rand]
-# mask = masks[rand]
-
-
-# plt.figure()
-# plt.subplot(121, title='before')
-# plt.imshow(image_before, cmap='gray')
-# plt.subplot(122, title='after')
-# plt.imshow(image_after, cmap='gray')
-# plt.show()
-
+    images = [pydicom.read_file(IMAGES_PATH + os.sep + s) for s in natsorted(os.listdir(IMAGES_PATH))]
+    # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
+    
+    random.shuffle(images)
+    
+    rand_images = []
+    for j in range(20):
+        rand = random.randint(0, len(images)-1)
+        rand_images.append(images[rand].pixel_array)
+        
+    # rand_images = [n4_bias_field_correction(i) for i in rand_images]
+    rand_images = [normalize(i) for i in rand_images]
+    # rand_images = [bm3d_denoising(i) for i in rand_images]
+    rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+    # rand_images = [equalize_histogram(i) for i in rand_images]
+    
+    # rand_images = [resize(i.pixel_array) for i in rand_images]
+    # rand_images = [standardization(i) for i in rand_images]
+    # rand_images = [intensity_range_standardization(i) for i in rand_images]
+    
+    # image_after = images[rand]
+    # mask = masks[rand]
+    
+    
+    # plt.figure()
+    # plt.subplot(121, title='before')
+    # plt.imshow(image_before, cmap='gray')
+    # plt.subplot(122, title='after')
+    # plt.imshow(image_after, cmap='gray')
+    # plt.show()
+    
