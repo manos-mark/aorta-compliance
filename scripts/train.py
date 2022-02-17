@@ -19,7 +19,7 @@ import datetime
 
 from metrics import dice_loss, dice_coef, iou
 from unet_model import build_unet
-from preprocessing import upscale_with_padding
+from preprocessing import crop_and_pad
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
