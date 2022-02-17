@@ -22,8 +22,8 @@ from scripts.unet_model import build_unet
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
-H = 512
-W = 512
+H = 256
+W = 256
 
 def create_dir(path):
     """ Create a directory. """
