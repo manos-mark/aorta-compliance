@@ -8,5 +8,4 @@ __pycache__/
 *.h5
 /dataset
 /papers
-/venv/include
-/venv/lib
+/venv
