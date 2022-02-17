@@ -17,9 +17,9 @@ from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
 
-from metrics import dice_loss, dice_coef, iou
-from unet_model import build_unet
-from preprocessing import crop_and_pad
+from scripts.metrics import dice_loss, dice_coef, iou
+from scripts.unet_model import build_unet
+from scripts.preprocessing import crop_and_pad
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
@@ -53,7 +53,7 @@ def read_image(path):
     # x = np.array(dcm)
     # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     # x = cv2.resize(dcm, (W, H))
-    # x = skimage.transform.resize(dcm, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
+    # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     x = crop_and_pad(x, W, H)
     x = x/np.max(x)
     x = x.astype(np.float32)
