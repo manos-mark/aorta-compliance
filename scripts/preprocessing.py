@@ -99,7 +99,7 @@ def plot_img_and_hist(image, axes, bins=256):
     return ax_img, ax_hist, ax_cdf
 
 
-def contrast_stretching(image, display=True):
+def contrast_stretching(image, display=False):
     # Contrast stretching
     p2, p98 = np.percentile(image, (2, 98))
     img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
@@ -274,7 +274,7 @@ def normalize(image):
     return x
 
 
-def limiting_filter(img, threshold=8, display=True):
+def limiting_filter(img, threshold=8, display=False):
     ret1, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
     binary_mask = img > ret1
     output = np.zeros_like(img)
@@ -312,7 +312,7 @@ if __name__ == "__main__":
         
     # rand_images = [n4_bias_field_correction(i) for i in rand_images]
     # rand_images = [bm3d_denoising(i) for i in rand_images]
-    # rand_images = [limiting_filter(i) for i in rand_images]
+    rand_images = [limiting_filter(i) for i in rand_images]
     rand_images = [contrast_stretching(i) for i in rand_images]
     rand_images = [normalize(i) for i in rand_images]
     rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
