@@ -22,29 +22,6 @@ from skimage.metrics import peak_signal_noise_ratio
 from skimage import morphology, data, img_as_float, exposure
 
 
-def standardization(image):
-    # Get brain mask
-    mask = image == 0
-    
-    selem = morphology.disk(2)
-    
-    segmentation = morphology.dilation(mask, selem)
-    labels, label_nb = ndimage.label(segmentation)
-
-    mask = labels == 0
-    
-    mask = morphology.dilation(mask, selem)
-    mask = ndimage.binary_fill_holes(mask)
-    mask = morphology.dilation(mask, selem)
-    
-    # Normalize
-    mean = image[mask].mean()
-    std = image[mask].std()
-    
-    normalized_image = (image - mean) / std
-    
-    return normalized_image
-
 def bm3d_denoising(image, display=True):
     bm3d_cleaned = bm3d.bm3d(image, sigma_psd=0.05, stage_arg=bm3d.BM3DStages.ALL_STAGES)
     if display:
@@ -55,6 +32,7 @@ def bm3d_denoising(image, display=True):
         plt.imshow(bm3d_cleaned, cmap='gray')
         plt.show()
     return bm3d_cleaned
+
 
 def n4_bias_field_correction(image, display=False):
     sitk_image = sitk.GetImageFromArray(image)
@@ -93,47 +71,6 @@ def intensity_range_standardization(images):
     trained_model, transformed_images = irs.train_transform(images)
     return transformed_images
 
-def remove_noise_from_image(image, display=True):
-    mask = image <= 10
-    
-    selem = morphology.disk(2)
-    
-    # We have to use the mask to perform segmentation 
-    # due to the fact that the original image is quite noisy
-    segmentation = morphology.dilation(mask, selem)
-    labels, label_nb = ndimage.label(segmentation)
-
-    mask = labels == 0
-    
-    mask = morphology.dilation(mask, selem)
-    mask = ndimage.morphology.binary_fill_holes(mask)
-    mask = morphology.dilation(mask, selem)
-    
-    clean_image = mask * image
-
-    if display:
-        plt.figure(figsize=(15, 2.5))
-        plt.subplot(141)
-        plt.imshow(image, cmap='gray')
-        plt.title('Original Image')
-        plt.axis('off')
-
-        plt.subplot(142)
-        plt.imshow(segmentation, cmap='gray')
-        plt.title('Background mask')
-        plt.axis('off')
-
-        plt.subplot(143)
-        plt.imshow(mask, cmap='gray')
-        plt.title('Mask')
-        plt.axis('off')
-
-        plt.subplot(144)
-        plt.imshow(clean_image, cmap='gray')
-        plt.title('Clean Image')
-        plt.axis('off')
-    
-    return clean_image
 
 def plot_img_and_hist(image, axes, bins=256):
     """Plot an image along with its histogram and cumulative histogram.
@@ -161,6 +98,23 @@ def plot_img_and_hist(image, axes, bins=256):
 
     return ax_img, ax_hist, ax_cdf
 
+
+def contrast_stretching(image, display=True):
+    # Contrast stretching
+    p2, p98 = np.percentile(image, (2, 98))
+    img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
+    
+    if display:
+        plt.figure()
+        plt.subplot(131, title='before stretching')
+        plt.imshow(image, cmap='gray')
+        plt.subplot(132, title='after stretching')
+        plt.imshow(img_rescale, cmap='gray')
+        # plt.subplot(133, title='resizing to original')
+        # plt.imshow(resizing_func(x, image.shape[0], image.shape[1]), cmap='gray')
+        plt.show()
+        
+    return img_rescale
 
 def equalize_histogram(image, display=True):
     # Contrast stretching
@@ -320,6 +274,28 @@ def normalize(image):
     return x
 
 
+def limiting_filter(img, threshold=8, display=True):
+    ret1, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
+    binary_mask = img > ret1
+    output = np.zeros_like(img)
+    output[binary_mask] = img[binary_mask]
+    
+    if display:
+        fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
+        ax1.imshow(img, cmap="gray")
+        ax1.title.set_text("Original Image")
+        ax2.imshow(img>0, cmap="gray")
+        ax2.title.set_text("Pixels > 0")
+
+        ax3.imshow(output, cmap="gray")
+        ax3.title.set_text("Output")
+        ax4.imshow(output>0, cmap="gray")
+        ax4.title.set_text("After limiting Pixels > 0")
+        plt.show()
+        
+    return output
+
+
 if __name__ == "__main__":
     IMAGES_PATH = os.path.join('dataset', 'images')
     MASKS_PATH = os.path.join('dataset', 'masks')
@@ -335,8 +311,10 @@ if __name__ == "__main__":
         rand_images.append(images[rand].pixel_array)
         
     # rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    rand_images = [normalize(i) for i in rand_images]
     # rand_images = [bm3d_denoising(i) for i in rand_images]
+    # rand_images = [limiting_filter(i) for i in rand_images]
+    rand_images = [contrast_stretching(i) for i in rand_images]
+    rand_images = [normalize(i) for i in rand_images]
     rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
     # rand_images = [equalize_histogram(i) for i in rand_images]
     
