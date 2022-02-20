@@ -25,6 +25,7 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
+EXPERIMENT = "exp2"
 
 def create_dir(path):
     """ Create a directory. """
@@ -111,8 +112,8 @@ if __name__ == "__main__":
     batch_size = 2
     lr = 1e-5
     num_epochs = 200
-    model_path = os.path.join("output", "model.h5")
-    csv_path = os.path.join("output", "data.csv")
+    model_path = os.path.join("output", EXPERIMENT, "model.h5")
+    csv_path = os.path.join("output", EXPERIMENT, "data.csv")
 
     """ Dataset """
     dataset_path = os.path.join('.', 'dataset')
@@ -140,6 +141,7 @@ if __name__ == "__main__":
     
     """ Model """
     model = build_unet((H, W, 1), data_augmentation)
+    # pre_trained_unet_model.load_weights('unet_model_pretrained.h5')
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
@@ -162,7 +164,7 @@ if __name__ == "__main__":
 
     model.summary()
 
-    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = os.path.join('logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [
         TensorBoard(log_dir=log_dir, histogram_freq=1),
