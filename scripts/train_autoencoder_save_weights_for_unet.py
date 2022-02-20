@@ -23,9 +23,12 @@ SIZE=256
 
 
 """ Read images """
-dataset_path = os.path.join('.', 'dataset', 'images')
-images = sorted(glob(os.path.join(dataset_path, "*.IMA")))
-images += sorted(glob(os.path.join(dataset_path, "*.dcm")))
+dataset_path = os.path.join('.', 'dataset')
+
+images = sorted(glob('dataset/diana_segmented/**/*.IMA', recursive=True))
+images += sorted(glob('dataset/Aorte/**/*.ima', recursive=True))
+images += sorted(glob('dataset/marfan_segmented/**/*.ima', recursive=True))
+
 
 img_data=[]
 for i in tqdm(images):
