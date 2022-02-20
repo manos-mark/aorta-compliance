@@ -18,7 +18,7 @@ import skimage.transform
 import datetime
 
 from scripts.metrics import dice_loss, dice_coef, iou
-from scripts.unet_model import build_unet
+from scripts.models.unet_model import build_unet
 from scripts.preprocessing import crop_and_pad, limiting_filter, contrast_stretching
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -112,11 +112,11 @@ if __name__ == "__main__":
     batch_size = 2
     lr = 1e-5
     num_epochs = 200
-    model_path = os.path.join("output", EXPERIMENT, "model.h5")
-    csv_path = os.path.join("output", EXPERIMENT, "data.csv")
+    model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
+    csv_path = os.path.join("..", "output", EXPERIMENT, "data.csv")
 
     """ Dataset """
-    dataset_path = os.path.join('.', 'dataset')
+    dataset_path = os.path.join('..', 'dataset')
     
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
     model.summary()
 
-    log_dir = os.path.join('logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [
         TensorBoard(log_dir=log_dir, histogram_freq=1),

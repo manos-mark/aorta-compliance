@@ -297,8 +297,8 @@ def limiting_filter(img, threshold=8, display=False):
 
 
 if __name__ == "__main__":
-    IMAGES_PATH = os.path.join('dataset', 'images')
-    MASKS_PATH = os.path.join('dataset', 'masks')
+    IMAGES_PATH = os.path.join('..', 'dataset', 'images')
+    MASKS_PATH = os.path.join('..', 'dataset', 'masks')
     
     images = [pydicom.read_file(IMAGES_PATH + os.sep + s) for s in natsorted(os.listdir(IMAGES_PATH))]
     # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
