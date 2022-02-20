@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 from glob import glob
 from tqdm import tqdm
 import pydicom
-from scripts.preprocessing import crop_and_pad
+from preprocessing import crop_and_pad
 
 
 SIZE=256

@@ -13,8 +13,8 @@ from itertools import islice
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from scripts.metrics import dice_loss, dice_coef, iou
-from scripts.train import load_data, create_dir, tf_dataset, read_image, read_mask
+from metrics import dice_loss, dice_coef, iou
+from train import load_data, create_dir, tf_dataset, read_image, read_mask
 
 
 H = 256
