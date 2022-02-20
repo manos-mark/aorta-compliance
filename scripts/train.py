@@ -25,11 +25,11 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "exp2"
+EXPERIMENT = "exp4"
 
 def create_dir(path):
     """ Create a directory. """
-    if not os.path.exists(path):
+    if not os.path.exists(os.path.join('..', path)):
         os.makedirs(path)
 
 def load_data(path, split=0.3):
