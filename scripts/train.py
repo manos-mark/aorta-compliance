@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     model.summary()
     
-    create_dir('..', 'logs', EXPERIMENT, 'fit')
+    create_dir(os.path.join('..', 'logs', EXPERIMENT, 'fit'))
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [

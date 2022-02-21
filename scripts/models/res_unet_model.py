@@ -7,20 +7,21 @@ Created on Tue Feb 15 21:43:58 2022
 
 from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D, Conv2DTranspose, Concatenate, Input
 from tensorflow.keras.models import Model
+import tensorflow.keras.layers
 from tensorflow import keras
 
 def conv_block(input, num_filters):
     conv = Conv2D(num_filters, 3, padding="same")(input)
-    conv = BatchNormalization()(x)
+    conv = BatchNormalization(axis=3)(conv)
     conv = Activation("relu")(conv)
 
     conv = Conv2D(num_filters, 3, padding="same")(conv)
-    x = BatchNormalization()(conv)
+    conv = BatchNormalization(axis=3)(conv)
     
     shortcut = Conv2D(num_filters, 1, padding="same")(input)
-    shortcut = BatchNormalization(shortcut)
+    shortcut = BatchNormalization(axis=3)(shortcut)
     
-    res_path = layers.add([shortcut, conv])
+    res_path = tensorflow.keras.layers.add([shortcut, conv])
     res_path = Activation("relu")(res_path) 
 
     return res_path
