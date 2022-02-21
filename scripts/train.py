@@ -25,7 +25,7 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "exp4"
+EXPERIMENT = "exp2"
 
 def create_dir(path):
     """ Create a directory. """
@@ -34,6 +34,7 @@ def create_dir(path):
 
 def load_data(path, split=0.3):
     images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
+    images = natsorted(glob(os.path.join(path, "images", "*.ima")))
     images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
@@ -56,7 +57,7 @@ def read_image(path):
     # x = cv2.resize(dcm, (W, H))
     # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     # x = limiting_filter(x)
-    x = contrast_stretching(x)
+    # x = contrast_stretching(x)
     x = crop_and_pad(x, W, H)
     x = x/np.max(x)
     x = x.astype(np.float32)

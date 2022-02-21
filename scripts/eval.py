@@ -19,7 +19,7 @@ from train import load_data, create_dir, tf_dataset, read_image, read_mask
 
 H = 256
 W = 256
-EXPERIMENT = 'exp3'
+EXPERIMENT = 'exp2'
 
 def interpret_training_results():
     log_data = pd.read_csv(os.path.join('..', 'output', EXPERIMENT, 'data.csv'))
@@ -83,9 +83,9 @@ if __name__ == "__main__":
 
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
-        model = tf.keras.models.load_model(os.path.join('..', "output", "exp2", "model.h5"))
+        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
-    model.evaluate(test_dataset, batch_size=2)
+    # model.evaluate(test_dataset, batch_size=2)
     
     
     for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
@@ -99,18 +99,22 @@ if __name__ == "__main__":
         y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
         y_pred = y_pred.astype(np.float32)
 
-        plt.subplot(2,2,1, title='Gound truth mask')
-        plt.imshow(y, cmap='gray')
-        plt.subplot(2,2,2, title='Gound truth image & mask')
-        plt.imshow(x, cmap='gray')
-        plt.imshow(y, cmap='jet', alpha=0.2)
+        # plt.subplot(2,2,1, title='Gound truth mask')
+        # plt.imshow(y, cmap='gray')
+        # plt.subplot(2,2,2, title='Gound truth image & mask')
+        # plt.imshow(x, cmap='gray')
+        # plt.imshow(y, cmap='jet', alpha=0.2)
          
-        plt.subplot(2,2,3, title='Predicted mask')
-        plt.imshow(y_pred, cmap='gray')
-        plt.subplot(2,2,4, title='Predicted image & mask')
+        # plt.subplot(2,2,3, title='Predicted mask')
+        # plt.imshow(y_pred, cmap='gray')
+        # plt.subplot(2,2,4, title='Predicted image & mask')
+        # plt.imshow(x, cmap='gray')
+        # final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
+        # plt.tight_layout()
+
+        plt.subplot(title='Predicted image & mask')
         plt.imshow(x, cmap='gray')
         final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
-        plt.tight_layout()
         
         """ Saving the predicted mask along with the image and GT """
         save_image_path = os.path.join('..', 'results', EXPERIMENT, str(i))
