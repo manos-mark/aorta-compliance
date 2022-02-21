@@ -19,7 +19,7 @@ from train import load_data, create_dir, tf_dataset, read_image, read_mask
 
 H = 256
 W = 256
-EXPERIMENT = 'exp2'
+EXPERIMENT = 'exp5'
 
 def interpret_training_results():
     log_data = pd.read_csv(os.path.join('..', 'output', EXPERIMENT, 'data.csv'))

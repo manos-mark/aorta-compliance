@@ -19,13 +19,14 @@ import datetime
 
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
+from models.res_unet_model import build_res_unet
 from preprocessing import crop_and_pad, limiting_filter, contrast_stretching
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "exp2"
+EXPERIMENT = "exp5"
 
 def create_dir(path):
     """ Create a directory. """
@@ -57,7 +58,7 @@ def read_image(path):
     # x = cv2.resize(dcm, (W, H))
     # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     # x = limiting_filter(x)
-    # x = contrast_stretching(x)
+    x = contrast_stretching(x)
     x = crop_and_pad(x, W, H)
     x = x/np.max(x)
     x = x.astype(np.float32)
@@ -141,7 +142,7 @@ if __name__ == "__main__":
     # ])
     
     """ Model """
-    model = build_unet((H, W, 1), data_augmentation)
+    model = build_res_unet((H, W, 1), data_augmentation)
     # pre_trained_unet_model.load_weights('unet_model_pretrained.h5')
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
@@ -164,7 +165,8 @@ if __name__ == "__main__":
     #     plt.show()
 
     model.summary()
-
+    
+    create_dir('..', 'logs', EXPERIMENT, 'fit')
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [

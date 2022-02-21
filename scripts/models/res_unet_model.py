@@ -36,7 +36,7 @@ def decoder_block(input, skip_features, num_filters):
     x = conv_block(x, num_filters)
     return x
 
-def build_unet(input_shape, preprocessing=None):
+def build_res_unet(input_shape, preprocessing=None):
     inputs = Input(input_shape)
     
     if type(preprocessing) == keras.Sequential:
