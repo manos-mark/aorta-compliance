@@ -35,7 +35,7 @@ def create_dir(path):
 
 def load_data(path, split=0.3):
     images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
-    images = natsorted(glob(os.path.join(path, "images", "*.ima")))
+    images += natsorted(glob(os.path.join(path, "images", "*.ima")))
     images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 2
+    batch_size = 1
     lr = 1e-5
     num_epochs = 200
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     model.summary()
     
-    create_dir(os.path.join('..', 'logs', EXPERIMENT, 'fit'))
+    create_dir(os.path.join('..', 'logs', EXPERIMENT))
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [
