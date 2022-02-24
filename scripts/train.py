@@ -16,6 +16,7 @@ from natsort import natsorted
 from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
+import nibabel as nib
 
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
@@ -26,18 +27,18 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "exp5"
+EXPERIMENT = "exp6"
 
 def create_dir(path):
     """ Create a directory. """
     if not os.path.exists(os.path.join('..', path)):
         os.makedirs(path)
 
-def load_data(path, split=0.3):
-    images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
-    images += natsorted(glob(os.path.join(path, "images", "*.ima")))
-    images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
-    masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
+def load_data(path, split=0.1):
+    images = natsorted(glob(os.path.join(path, "images-test", "*.nii.gz")))
+#    images += natsorted(glob(os.path.join(path, "images", "*.ima")))
+#    images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    masks = natsorted(glob(os.path.join(path, "masks-test", "*_ROI.nii.gz")))
 
     split_size = int(len(images) * split)
 
@@ -50,42 +51,55 @@ def load_data(path, split=0.3):
     return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
 
 def read_image(path):
-    dcm = dicom.dcmread(path)
-    x = dcm.pixel_array
-    # x = cv2.imread(path, cv2.IMREAD_COLOR)
-    # x = np.array(dcm)
-    # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    # x = cv2.resize(dcm, (W, H))
-    # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
-    # x = limiting_filter(x)
-    x = contrast_stretching(x)
-    x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
-    x = x.astype(np.float32)
-    x = np.expand_dims(x, axis=-1)
-    return x
+    def _read_image(path):
+        print(path)
+        return (nib.load(path.numpy().decode("utf-8"))).get_fdata().transpose([2,1,0]).astype(np.float32)
+    
+    loaded_images = tf.py_function(_read_image, [path], tf.float32)
+    
+    def _preprocess_image(x):
+        print('-----------------------------------')
+        print(x)
+        print(x.shape)
+        print(type(x))
+        x = contrast_stretching(x)
+        x = crop_and_pad(x, W, H)
+        x = x/np.max(x)
+        x = np.expand_dims(x, axis=-1)
+        return x
+        
+    processed_images = tf.py_function(_preprocess_image, [loaded_images], tf.float32)
+    
+    return processed_images
 
 def read_mask(path):
-    x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    # x = cv2.resize(x, (W, H))
-    # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
-    x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
-    x = x > 0.5
-    x = x.astype(np.float32)
-    x = np.expand_dims(x, axis=-1)
-    return x
+    def _read_image(path):
+        print(path)
+        return (nib.load(path.numpy().decode("utf-8"))).get_fdata().transpose([2,1,0]).astype(np.float32)
+    
+    loaded_images = tf.py_function(_read_image, [path], tf.float32)
+    
+    def _preprocess_image(x):
+        #x = contrast_stretching(x)
+        x = crop_and_pad(x, W, H)
+        x = x/np.max(x)
+        x = np.expand_dims(x, axis=-1)
+        return x
+        
+    processed_images = tf.py_function(_preprocess_image, [loaded_images], tf.float32)
+    
+    return processed_images
 
 def tf_parse(x, y):
     def _parse(x, y):
-        x = x.decode()
-        y = y.decode()
+#        x = x.decode()
+#        y = y.decode()
 
         x = read_image(x)
         y = read_mask(y)
         return x, y
 
-    x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
+    x, y = tf.py_function(_parse, [x, y], [tf.float32, tf.float32])
     x.set_shape([H, W, 1])
     y.set_shape([H, W, 1])
     
@@ -94,7 +108,7 @@ def tf_parse(x, y):
 def tf_dataset(X, Y, batch=2):
     dataset = tf.data.Dataset.from_tensor_slices((X, Y))
     dataset = dataset.cache()
-    dataset = dataset.shuffle(buffer_size=200)
+    dataset = dataset.shuffle(buffer_size=5)
     dataset = dataset.map(tf_parse)
     dataset = dataset.batch(batch)
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -166,7 +180,7 @@ if __name__ == "__main__":
 
     model.summary()
     
-    create_dir(os.path.join('..', 'logs', EXPERIMENT))
+#    create_dir(os.path.join('..', 'logs', EXPERIMENT))
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [

@@ -4,6 +4,7 @@ Created on Fri Feb  4 10:37:20 2022
 
 @author: manos
 """
+import nibabel as nib
 import random
 import os
 import pydicom
@@ -214,7 +215,7 @@ def resize(image, W=512, H=512, display=True):
     return x
 
 
-def crop_and_pad(img, cropx, cropy, display=False):
+def crop_and_pad(img, cropx, cropy, display=True):
     h, w = img.shape
     starty = startx = 0
     # print('Input: ',img.shape)
@@ -297,10 +298,10 @@ def limiting_filter(img, threshold=8, display=False):
 
 
 if __name__ == "__main__":
-    IMAGES_PATH = os.path.join('..', 'dataset', 'images')
+    IMAGES_PATH = os.path.join('..', 'dataset', 'images-test')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
     
-    images = [pydicom.read_file(IMAGES_PATH + os.sep + s) for s in natsorted(os.listdir(IMAGES_PATH))]
+    images = [(nib.load(IMAGES_PATH + os.sep + s)).get_fdata().transpose([2,1,0]) for s in natsorted(os.listdir(IMAGES_PATH))]
     # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
     
     random.shuffle(images)
@@ -308,14 +309,14 @@ if __name__ == "__main__":
     rand_images = []
     for j in range(20):
         rand = random.randint(0, len(images)-1)
-        rand_images.append(images[rand].pixel_array)
+        rand_images.append(images[rand])
         
     # rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    rand_images = [bm3d_denoising(i) for i in rand_images]
+#    rand_images = [bm3d_denoising(i) for i in rand_images]
     # rand_images = [limiting_filter(i) for i in rand_images]
     # rand_images = [contrast_stretching(i) for i in rand_images]
     # rand_images = [normalize(i) for i in rand_images]
-    # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+    rand_images = [crop_and_pad(i[0], 256, 256) for i in rand_images]
     # rand_images = [equalize_histogram(i) for i in rand_images]
     
     # rand_images = [resize(i.pixel_array) for i in rand_images]
