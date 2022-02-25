@@ -85,7 +85,7 @@ if __name__ == "__main__":
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
-    # model.evaluate(test_dataset, batch_size=2)
+    model.evaluate(test_dataset, batch_size=2)
     
     
     for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):

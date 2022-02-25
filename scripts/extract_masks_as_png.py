@@ -10,9 +10,9 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('dataset', 'diana_segmented') # = 'D:\\Vibot\\thesis\\dataset\\patients'
-DICOMS_PATH = os.path.join('dataset', 'images') # = 'D:\\Vibot\\thesis\\dataset\\dicoms'
-MASKS_PATH = os.path.join('dataset', 'masks') # = 'D:\\Vibot\\thesis\\dataset\\masks'
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
+MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
 
 def create_dir(path):
@@ -45,8 +45,8 @@ if __name__ == '__main__':
     create_dir(DICOMS_PATH)
     create_dir(MASKS_PATH)
 
-    dicoms_path = natsorted(glob.iglob('dataset/diana_segmented/**/*.IMA', recursive=True))
-    masks_path = natsorted(glob.iglob('dataset/diana_segmented/**/ComplianceAscending.json', recursive=True))
+    dicoms_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/*.IMA', recursive=True))
+    masks_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/ComplianceAscending.json', recursive=True))
 
     for mask_path in tqdm(masks_path):
         # Open contours file
@@ -89,4 +89,3 @@ if __name__ == '__main__':
 
                 plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
                 shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
-                # image.save_as(f'{os.path.join(DICOMS_PATH, dicom_name)}')
