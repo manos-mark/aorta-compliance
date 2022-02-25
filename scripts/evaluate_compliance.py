@@ -20,124 +20,99 @@ import cv2
 import os
 
 
-def compute_compliance_from_excel(patiend_id, excel_path, asc_or_desc='asc'):
+def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
     
     syst_press, diast_press, asc_min, asc_max, asc_compliance, \
         asc_distensibility, desc_min, desc_max, \
-        desc_compliance, desc_distensibility = df.loc[patiend_id, 'PS':]
+        desc_compliance, desc_distensibility = df.loc[patient_id, 'PS':]
         
     if asc_or_desc == 'asc':
-        compliance = compute_compliance(asc_min, asc_max, syst_press, diast_press), asc_compliance
+        compliance = compute_compliance(asc_min, asc_max, syst_press, diast_press)
         return compliance, asc_min, asc_max
     else:
-        compliance = compute_compliance(desc_min, desc_max, syst_press, diast_press), desc_compliance
+        compliance = compute_compliance(desc_min, desc_max, syst_press, diast_press)
         return compliance, desc_min, desc_max
     
 
-def fetch_compliance_from_excel(patiend_id, excel_path, asc_or_desc='asc'):
+def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
             
     compliance = None
     if asc_or_desc == 'asc':
-        compliance = df.loc[patiend_id, 'asc-compliance']
+        compliance = df.loc[patient_id, 'asc-compliance']
     else:
-        compliance = df.loc[patiend_id, 'desc-compliance']
+        compliance = df.loc[patient_id, 'desc-compliance']
         
     return compliance
 
 
-def fetch_syst_press_from_excel(patiend_id, excel_path):
+def fetch_syst_press_from_excel(patient_id, excel_path):
     df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
-    return df.loc[patiend_id, 'PS']
+    return df.loc[patient_id, 'PS']
 
 
-def fetch_diast_press_from_excel(patiend_id, excel_path):
+def fetch_diast_press_from_excel(patient_id, excel_path):
     df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
-    return df.loc[patiend_id, 'PD']
+    return df.loc[patient_id, 'PD']
 
         
 def compute_compliance(min_area, max_area, syst_press, diast_press):
     return np.abs(max_area - min_area) / np.abs(syst_press - diast_press)
 
 
-def segment_aorta_and_calculate_area(model, images, display=False):
-    """
-    Segment aorta and calculate the area
-
-    Parameters
-    ----------
-    model : TYPE
-        DESCRIPTION.
-    images : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    Minimum and maximum area of aorta
-
-    """
-    areas = []
-    for i, x in tqdm(enumerate(images), total=len(images)):
-        x = read_image(x)
+def segment_aorta(model, image_path, display=True):
+    image = read_image(image_path)
         
-        """ Predicting the mask """
-        y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
-        y_pred = y_pred.astype(np.float32)
+    """ Predicting the mask """
+    y_pred = model.predict(np.expand_dims(image, axis=0))[0] > 0.5
+    y_pred = y_pred.astype(np.float32)
 
-        """ Compute the area of aorta """
-        area = cv2.countNonZero(y_pred)
-        areas.append(area)
+    if display:
+        """ Show the segmented aorta """
+        plt.subplot(title='Predicted image & mask')
+        plt.imshow(image, cmap='gray')
+        plt.imshow(y_pred, cmap='jet', alpha=0.2)
+        plt.show()
 
-        if display:
-            """ Show the segmented aorta """
-            plt.subplot(title='Predicted image & mask')
-            plt.imshow(x, cmap='gray')
-            plt.imshow(y_pred, cmap='jet', alpha=0.2)
-            plt.show()
-        
-    """ Get the min and max area """
-    min_area = min(areas)
-    max_area = max(areas)
-    
-    return min_area, max_area
+    return y_pred
 
 
 if __name__ == '__main__':
     EXPERIMENT = 'exp3'
-    patient_id = 'D-0001'
+    patient_id = 'D-0002'
     
     """ File paths """
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented', '000000436346_PATRU OLIVIER')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented', '000151041932_ALEXANDRE ROBERT')
     excel_path = os.path.join('..', 'dataset', 'diana_segmented', 'Patient_Compliance_Dec2020.xlsx')
        
     """ Loading patient images """
-    images = glob.glob(f'{DATASET_FOLDER_PATH}/**/*.IMA', recursive=True)
+    image_paths = glob.glob(f'{DATASET_FOLDER_PATH}/**/*.IMA', recursive=True)
     
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
-        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
-    
-    """ Perform aorta segmentation """
-    """ Compute areas on every slice """
-    min_area, max_area = segment_aorta_and_calculate_area(model, images)
+        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))    
         
     """ Fetch compliance from excel file """
     original_compliance, original_min, original_max = compute_compliance_from_excel(patient_id, excel_path)
     
     """ Fetch systolic and distolic pressures from excel file """
-    syst_press = fetch_syst_press_from_excel(patiend_id, excel_path)
-    diast_press = fetch_diast_press_from_excel(patiend_id, excel_path)
+    syst_press = fetch_syst_press_from_excel(patient_id, excel_path)
+    diast_press = fetch_diast_press_from_excel(patient_id, excel_path)
     
     """ Compute compliances on every slice and then calculate the average, for global compliance """
-    computed_compliances = []
-    for image in images:        
-        """ Compute compliance """
-        computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
-        computed_compliances.append(computed_compliance)
+    area_per_slice = []
+    for image_path in tqdm(image_paths, total=len(image_paths)):     
+        """ Segment aorta """
+        aorta = segment_aorta(model, image_path)
+        """ Calculate area """
+        area = cv2.countNonZero(aorta)
+        area_per_slice.append(area)
         
-    """ Compute global compliance """
-    avg_computed_compliance = np.mean(np.array(computed_compliances))
+    """ Compute compliance """
+    min_area = min(area_per_slice)
+    max_area = max(area_per_slice)
+    computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         
-    print('Computed global ascending compliance', avg_computed_compliance)
+    print('Computed global ascending compliance', computed_compliance)
     print('Original global ascending compliance', original_compliance)
