@@ -4,11 +4,13 @@ Created on Fri Feb 25 11:18:03 2022
 
 @author: manos
 """
+from preprocessing import crop_and_pad
 from metrics import dice_loss, dice_coef, iou
 from train import read_image
 
 from tensorflow.keras.utils import CustomObjectScope
 from natsort import natsorted
+from pydicom import dcmread
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
@@ -61,9 +63,7 @@ def compute_compliance(min_area, max_area, syst_press, diast_press):
     return np.abs(max_area - min_area) / np.abs(syst_press - diast_press)
 
 
-def segment_aorta(model, image_path, display=True):
-    image = read_image(image_path)
-        
+def segment_aorta(model, image, display=False):
     """ Predicting the mask """
     y_pred = model.predict(np.expand_dims(image, axis=0))[0] > 0.5
     y_pred = y_pred.astype(np.float32)
@@ -100,11 +100,16 @@ if __name__ == '__main__':
     syst_press = fetch_syst_press_from_excel(patient_id, excel_path)
     diast_press = fetch_diast_press_from_excel(patient_id, excel_path)
     
-    """ Compute compliances on every slice and then calculate the average, for global compliance """
+    """ Segment the aorta and calculate area """
     area_per_slice = []
-    for image_path in tqdm(image_paths, total=len(image_paths)):     
+    for image_path in tqdm(image_paths, total=len(image_paths)):  
+        image = read_image(image_path)
+        W,H = ((dcmread(image_path)).pixel_array).shape
+        
         """ Segment aorta """
-        aorta = segment_aorta(model, image_path)
+        aorta = segment_aorta(model, image)
+        aorta = crop_and_pad(aorta.copy()[:,:,0], W, H, display=True)
+        
         """ Calculate area """
         area = cv2.countNonZero(aorta)
         area_per_slice.append(area)
@@ -114,5 +119,5 @@ if __name__ == '__main__':
     max_area = max(area_per_slice)
     computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         
-    print('Computed global ascending compliance', computed_compliance)
-    print('Original global ascending compliance', original_compliance)
+    print('Computed ascending compliance', computed_compliance)
+    print('Original ascending compliance', original_compliance)
