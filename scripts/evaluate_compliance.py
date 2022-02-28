@@ -100,7 +100,7 @@ if __name__ == '__main__':
     syst_press = fetch_syst_press_from_excel(patient_id, excel_path)
     diast_press = fetch_diast_press_from_excel(patient_id, excel_path)
     
-    """ Segment the aorta and calculate area """
+    """ Segment the aorta and calculate area for each slice """
     area_per_slice = []
     for image_path in tqdm(image_paths, total=len(image_paths)):  
         image = read_image(image_path)
@@ -108,13 +108,13 @@ if __name__ == '__main__':
         
         """ Segment aorta """
         aorta = segment_aorta(model, image)
-        aorta = crop_and_pad(aorta.copy()[:,:,0], W, H, display=True)
+        aorta = crop_and_pad(aorta[:,:,0], W, H, display=True)
         
         """ Calculate area """
         area = cv2.countNonZero(aorta)
         area_per_slice.append(area)
         
-    """ Compute compliance """
+    """ Compute global ascending compliance """
     min_area = min(area_per_slice)
     max_area = max(area_per_slice)
     computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
