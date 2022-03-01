@@ -108,15 +108,28 @@ if __name__ == '__main__':
         
         """ Segment aorta """
         aorta = segment_aorta(model, image)
-        aorta = crop_and_pad(aorta[:,:,0], W, H, display=True)
+        # aorta = crop_and_pad(aorta[:,:,0], W, H)
+        # image = crop_and_pad(image[:,:,0], W, H)
+        
+        plt.subplot(title='Predicted image & mask')
+        plt.imshow(image, cmap='gray')
+        plt.imshow(aorta, cmap='jet', alpha=0.2)
+        plt.show()
         
         """ Calculate area """
         area = cv2.countNonZero(aorta)
         area_per_slice.append(area)
-        
+
+    # """ Get the minimum and maximum areas across all slices """        
+    # min_area = min(area_per_slice)
+    # max_area = max(area_per_slice)
+    
+    """ Get the median of 5 values close to minimum and maximum areas across all slices """
+    area_per_slice.sort()
+    min_area = np.median(np.array(area_per_slice[:5]))
+    max_area = np.median(np.array(area_per_slice[5:]))
+    
     """ Compute global ascending compliance """
-    min_area = min(area_per_slice)
-    max_area = max(area_per_slice)
     computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         
     print('Computed ascending compliance', computed_compliance)
