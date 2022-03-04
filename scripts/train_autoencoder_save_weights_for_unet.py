@@ -4,7 +4,7 @@ Created on Sat Feb 19 21:03:12 2022
 
 @author: manos
 """
-
+import random
 import numpy as np
 import cv2
 from keras.preprocessing.image import img_to_array
@@ -17,7 +17,8 @@ from glob import glob
 from tqdm import tqdm
 import pydicom
 from preprocessing import crop_and_pad
-
+from models.autoencoder_model import build_autoencoder, build_encoder
+from models.unet_model import build_unet
 
 SIZE=256
 
@@ -43,8 +44,6 @@ img_array = np.reshape(img_data, (len(img_data), SIZE, SIZE, 1))
 # img_array = img_array.astype('float32') / 255.
 
 """ Define the autoencoder model """
-from scripts.models.autoencoder_model import build_autoencoder, build_encoder
-
 autoencoder_model=build_autoencoder((SIZE, SIZE, 1))
 autoencoder_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 print(autoencoder_model.summary())
@@ -56,7 +55,6 @@ history = autoencoder_model.fit(img_array, img_array,
 autoencoder_model.save('autoencoder.h5')
 
 """ Test on a few images """       
-import random
 num=random.randint(0, len(img_array)-1)
 test_img = np.expand_dims(img_array[num], axis=0)
 pred = autoencoder_model.predict(test_img)
@@ -71,7 +69,6 @@ plt.show()
 
 
 """ Set weights to encoder part of the U-net (first 35 layers) """
-from scripts.models.unet_model import build_unet
 unet_model = build_unet((SIZE, SIZE, 1))
 
 for l1, l2 in zip(unet_model.layers[:35], autoencoder_model.layers[0:35]):
