@@ -7,7 +7,6 @@ Created on Sat Feb 19 21:03:12 2022
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-
 import random
 import numpy as np
 import cv2
@@ -68,21 +67,21 @@ if __name__ == "__main__":
     images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
     images += sorted(glob('../dataset/aorte_segmented/**/*.ima', recursive=True))
     images += sorted(glob('../dataset/marfan_segmented/**/*.ima', recursive=True))
-#    
     
-#    img_data=[]
-#    for i in tqdm(images):
-#        dcm = pydicom.dcmread(i)
-#        x = dcm.pixel_array
-#        x = crop_and_pad(x, SIZE, SIZE)
-#        x = x/np.max(x)
-#        x = x.astype(np.float32)
-#        img_data.append(x)
+    img_data=[]
+    for i in tqdm(images):
+        dcm = pydicom.dcmread(i)
+        x = dcm.pixel_array
+        x = contrast_stretching(x)
+        x = crop_and_pad(x, W, H)
+        x = x/np.max(x)
+        x = x.astype(np.float32)
+        img_data.append(x)
         
-#    img_array = np.reshape(img_data, (len(img_data), SIZE, SIZE, 1))
+    img_array = np.reshape(img_data, (len(img_data), W, H, 1))
     # img_array = img_array.astype('float32') / 255.
     
-    dataset = tf_dataset(images, batch=1)
+    # dataset = tf_dataset(images, batch=1)
     
     """ Define the autoencoder model """
     autoencoder_model=build_autoencoder((W, H, 1))
@@ -90,7 +89,7 @@ if __name__ == "__main__":
     print(autoencoder_model.summary())
     
     """ Train the autoencoder """
-    history = autoencoder_model.fit(dataset,
+    history = autoencoder_model.fit(img_array,img_array,
             epochs=100, verbose=1)
     
     autoencoder_model.save('autoencoder.h5')

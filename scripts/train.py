@@ -21,6 +21,8 @@ from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
 from preprocessing import augment, crop_and_pad, limiting_filter, contrast_stretching
+import datetime
+
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
@@ -33,7 +35,7 @@ def create_dir(path):
     if not os.path.exists(os.path.join('..', path)):
         os.makedirs(path)
 
-def load_data(path, split=0.3):
+def load_data(path, split=0.2):
     images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
     # images += natsorted(glob(os.path.join(path, "images", "*.ima")))
     images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
@@ -52,12 +54,6 @@ def load_data(path, split=0.3):
 def read_image(path):
     dcm = dicom.dcmread(path)
     x = dcm.pixel_array
-    # x = cv2.imread(path, cv2.IMREAD_COLOR)
-    # x = np.array(dcm)
-    # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    # x = cv2.resize(dcm, (W, H))
-    # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
-    # x = limiting_filter(x)
     x = contrast_stretching(x)
     x = crop_and_pad(x, W, H)
     x = x/np.max(x)
@@ -67,8 +63,6 @@ def read_image(path):
 
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    # x = cv2.resize(x, (W, H))
-    # x = skimage.transform.resize(x, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
     x = crop_and_pad(x, W, H)
     x = x/np.max(x)
     x = x > 0.5
@@ -105,7 +99,7 @@ def tf_dataset(X, Y, batch=2):
 if __name__ == "__main__":
     """ Seeding """
     np.random.seed(42)
-    tf.random.set_seed(42)#set_random_seed(42)
+    tf.random.set_seed(42)
 
     """ Directory for storing files """
     create_dir("output")
@@ -122,9 +116,9 @@ if __name__ == "__main__":
     
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
-    # print(f"Train: {len(train_x)} - {len(train_y)}")
-    # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
-    # print(f"Test: {len(test_x)} - {len(test_y)}")
+    print(f"Train: {len(train_x)} - {len(train_y)}")
+    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
+    print(f"Test: {len(test_x)} - {len(test_y)}")
     
     train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
@@ -161,11 +155,11 @@ if __name__ == "__main__":
 
     model.summary()
     
-    # create_dir(os.path.join('..', 'logs', EXPERIMENT))
-    log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    start = datetime.datetime.now()
+    log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', start.strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [
-        TensorBoard(log_dir=log_dir, histogram_freq=1),
+        TensorBoard(log_dir=log_dir, histogram_freq=1, write_images=True),
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
         ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
         CSVLogger(csv_path),
@@ -178,3 +172,12 @@ if __name__ == "__main__":
         validation_data=valid_dataset,
         callbacks=callbacks
     )
+    
+    end = datetime.datetime.now()
+    diff = end-start
+    days, seconds = diff.days, diff.seconds
+    hours = days * 24 + seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    
+    print(f"Total training time: {hours} hours \t {minutes} minutes \t {seconds} seconds")
