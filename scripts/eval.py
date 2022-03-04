@@ -19,7 +19,7 @@ from train import load_data, create_dir, tf_dataset, read_image, read_mask
 
 H = 256
 W = 256
-EXPERIMENT = 'exp5'
+EXPERIMENT = 'test'
 
 def interpret_training_results():
     log_data = pd.read_csv(os.path.join('..', 'output', EXPERIMENT, 'data.csv'))
@@ -61,7 +61,7 @@ def interpret_training_results():
     
 
 if __name__ == "__main__":
-    interpret_training_results()
+    # interpret_training_results()
     """ Seeding """
     np.random.seed(42)
     tf.random.set_seed(42)

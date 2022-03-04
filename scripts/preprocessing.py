@@ -17,6 +17,7 @@ import SimpleITK as sitk
 import cv2
 from medpy.filter import IntensityRangeStandardization
 
+import tensorflow as tf
 import skimage
 from skimage.metrics import peak_signal_noise_ratio
 from skimage import morphology, data, img_as_float, exposure
@@ -295,6 +296,23 @@ def limiting_filter(img, threshold=8, display=False):
         
     return output
 
+def augment(image, mask, display=True):
+    augmented_image = tf.image.random_flip_left_right(image, 6)
+    # augmented_image = tf.image.random_flip_up_down(augmented_image)
+    # augmented_image = tf.image.rot90(augmented_image)
+    
+    # fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
+    # ax1.imshow(image[0], cmap="gray")
+    # ax1.title.set_text("Original Image")
+    # ax2.imshow(mask[0], cmap="gray")
+    # ax2.title.set_text("Original mask")
+    
+    # ax3.imshow(augmented_image[0], cmap="gray")
+    # ax3.title.set_text("Augmented Image")
+    # ax4.imshow(mask[0], cmap="gray")
+    # ax4.title.set_text("Augmented mask")
+        
+    return (augmented_image, mask)
 
 if __name__ == "__main__":
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')

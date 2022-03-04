@@ -10,7 +10,7 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'aorte_segmented') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     create_dir(DICOMS_PATH)
     create_dir(MASKS_PATH)
 
-    dicoms_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/*.IMA', recursive=True))
+    dicoms_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/*.ima', recursive=True))
     masks_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/ComplianceAscending.json', recursive=True))
 
     for mask_path in tqdm(masks_path):
