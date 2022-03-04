@@ -4,13 +4,16 @@ Created on Sat Feb 19 21:03:12 2022
 
 @author: manos
 """
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+
 import random
 import numpy as np
 import cv2
 from keras.preprocessing.image import img_to_array
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, Dropout, Input, Conv2DTranspose
 from tensorflow.keras.models import Sequential
-import os
 from keras.models import Model
 from matplotlib import pyplot as plt
 from glob import glob
@@ -21,6 +24,7 @@ from models.autoencoder_model import build_autoencoder, build_encoder
 from models.unet_model import build_unet
 
 SIZE=256
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 
 """ Read images """
