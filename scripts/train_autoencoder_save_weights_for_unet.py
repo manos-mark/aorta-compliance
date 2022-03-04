@@ -65,6 +65,7 @@ if __name__ == "__main__":
     dataset_path = os.path.join('..', 'dataset')
     
     images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
+    images = images[:500]
     # images += sorted(glob('../dataset/aorte_segmented/**/*.ima', recursive=True))
     # images += sorted(glob('../dataset/marfan_segmented/**/*.ima', recursive=True))
     
