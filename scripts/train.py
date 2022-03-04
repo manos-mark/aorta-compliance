@@ -20,7 +20,7 @@ import datetime
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
-from preprocessing import crop_and_pad, limiting_filter, contrast_stretching
+from preprocessing import augment, crop_and_pad, limiting_filter, contrast_stretching
 
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
@@ -122,9 +122,6 @@ if __name__ == "__main__":
     
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
     
-    # Subsplit data for fast testing of models
-    # train_x, _, train_y, _ = train_test_split(train_x, train_y, test_size=0.2, random_state=42)
-    
     # print(f"Train: {len(train_x)} - {len(train_y)}")
     # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     # print(f"Test: {len(test_x)} - {len(test_y)}")
@@ -135,10 +132,10 @@ if __name__ == "__main__":
     """ Data augmentation layers """
     data_augmentation = None
     # data_augmentation = tf.keras.Sequential([
-    #   tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal"),
-    #     tf.keras.layers.experimental.preprocessing.RandomRotation(0.2), 
-    #    tf.keras.layers.experimental.preprocessing.RandomZoom(height_factor=(0.2, 0.3), width_factor=(0.2, 0.3)),
-    #    tf.keras.layers.experimental.preprocessing.RandomTranslation(0.3, 0.3, fill_mode='reflect', interpolation='bilinear',)
+    #     tf.keras.layers.RandomFlip("horizontal"),
+    #     tf.keras.layers.RandomRotation(0.2), 
+    #     tf.keras.layers.RandomZoom(height_factor=(0.2, 0.3), width_factor=(0.2, 0.3)),
+    #     tf.keras.layers.RandomTranslation(0.3, 0.3, fill_mode='reflect', interpolation='bilinear',)
     # ])
     
     """ Model """
@@ -160,13 +157,11 @@ if __name__ == "__main__":
     #     plt.imshow(image, cmap='gray')
     #     plt.subplot(1,3,2)
     #     plt.imshow(mask, cmap='gray')
-    #     plt.subplot(1,3,3)
-    #     plt.hist(image[:,:,0])
     #     plt.show()
 
     model.summary()
     
-    create_dir(os.path.join('..', 'logs', EXPERIMENT))
+    # create_dir(os.path.join('..', 'logs', EXPERIMENT))
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     callbacks = [
