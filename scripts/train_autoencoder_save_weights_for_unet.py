@@ -65,7 +65,7 @@ if __name__ == "__main__":
     dataset_path = os.path.join('..', 'dataset')
     
     images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
-    images = images[:500]
+    images = images[:100]
     # images += sorted(glob('../dataset/aorte_segmented/**/*.ima', recursive=True))
     # images += sorted(glob('../dataset/marfan_segmented/**/*.ima', recursive=True))
     
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         img_data.append(x)
         
     img_array = np.reshape(img_data, (len(img_data), W, H, 1))
-    # img_array = img_array.astype('float32') / 255.
+    img_array = img_array.astype('float32') / 255.
     
     # dataset = tf_dataset(images, batch=1)
     
