@@ -50,7 +50,7 @@ def tf_parse(x):
     
     return x, y
 
-def tf_dataset(X, batch=1):
+def tf_dataset(X, batch=2):
     dataset = tf.data.Dataset.from_tensor_slices((X))
     dataset = dataset.cache()
     dataset = dataset.shuffle(buffer_size=200)
