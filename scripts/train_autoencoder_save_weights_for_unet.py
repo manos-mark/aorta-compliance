@@ -65,24 +65,24 @@ if __name__ == "__main__":
     dataset_path = os.path.join('..', 'dataset')
     
     images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
-    images = images[:100]
+    # images = images[:100]
     # images += sorted(glob('../dataset/aorte_segmented/**/*.ima', recursive=True))
     # images += sorted(glob('../dataset/marfan_segmented/**/*.ima', recursive=True))
     
-    img_data=[]
-    for i in tqdm(images):
-        dcm = pydicom.dcmread(i)
-        x = dcm.pixel_array
-        x = contrast_stretching(x)
-        x = crop_and_pad(x, W, H)
-        x = x/np.max(x)
-        x = x.astype(np.float32)
-        img_data.append(x)
+    # img_data=[]
+    # for i in tqdm(images):
+    #     dcm = pydicom.dcmread(i)
+    #     x = dcm.pixel_array
+    #     x = contrast_stretching(x)
+    #     x = crop_and_pad(x, W, H)
+    #     x = x/np.max(x)
+    #     x = x.astype(np.float32)
+    #     img_data.append(x)
         
-    img_array = np.reshape(img_data, (len(img_data), W, H, 1))
-    img_array = img_array.astype('float32') / 255.
+    # img_array = np.reshape(img_data, (len(img_data), W, H, 1))
+    # img_array = img_array.astype('float32') / 255.
     
-    # dataset = tf_dataset(images, batch=1)
+    dataset = tf_dataset(images, batch=1)
     
     """ Define the autoencoder model """
     autoencoder_model=build_autoencoder((W, H, 1))
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     print(autoencoder_model.summary())
     
     """ Train the autoencoder """
-    history = autoencoder_model.fit(img_array,img_array,
+    history = autoencoder_model.fit(dataset,
             epochs=100, verbose=1)
     
     autoencoder_model.save('autoencoder.h5')
