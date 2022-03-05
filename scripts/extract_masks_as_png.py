@@ -78,14 +78,14 @@ if __name__ == '__main__':
 
                 # Generate ROI's polygon 
                 polygon = generate_polygon(image_path, points_list)
-
-                # Save ROI image
-                slide_name = slide_id.split(".")[:-1]
-                slide_name[-1] += '_ROI.png'
-                slide_name = ".".join(slide_name)
                 
-                mask_name = case_id + '_' + patient_id + '_' + slide_name
-                dicom_name = case_id + '_' + patient_id + '_' + slide_id
+                # Remove unnecessary info
+                slide_id = slide_id.split(".")[4]
+                slide_id = "".join(slide_id)
+                
+                # Save ROIs and images
+                mask_name = case_id + '_' + patient_id + '_' + slide_id + '_ROI.png'
+                dicom_name = case_id + '_' + patient_id + '_' + slide_id + '.dcm'
 
                 plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
                 shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
