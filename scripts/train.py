@@ -17,6 +17,7 @@ from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
 
+from split_dataset import train_val_test_split
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
@@ -32,24 +33,13 @@ EXPERIMENT = "test"
 
 def create_dir(path):
     """ Create a directory. """
-    if not os.path.exists(os.path.join('..', path)):
+    if not os.path.exists(path):
         os.makedirs(path)
 
 def load_data(path, split=0.2):
-    images = natsorted(glob(os.path.join(path, "images", "*.IMA")))
-    # images += natsorted(glob(os.path.join(path, "images", "*.ima")))
-    images += natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
-
-    split_size = int(len(images) * split)
-
-    train_x, valid_x, train_y, valid_y = train_test_split(images, masks, test_size=split_size, random_state=42)
-    # train_y, valid_y = train_test_split(masks, test_size=split_size, random_state=42)
-
-    train_x, test_x, train_y, test_y = train_test_split(train_x, train_y, test_size=split_size, random_state=42)
-    # train_y, test_y = train_test_split(train_y, test_size=split_size, random_state=42)
-
-    return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
+    return train_val_test_split(images, masks, split)
 
 def read_image(path):
     dcm = dicom.dcmread(path)
