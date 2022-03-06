@@ -19,7 +19,12 @@ from train import load_data, create_dir, tf_dataset, read_image, read_mask
 
 H = 256
 W = 256
-EXPERIMENT = 'test'
+EXPERIMENT = 'attention-u-net_not-augmented_split-patients'
+
+def create_dir(path):
+    """ Create a directory. """
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def interpret_training_results():
     log_data = pd.read_csv(os.path.join('..', 'output', EXPERIMENT, 'data.csv'))
@@ -82,7 +87,8 @@ if __name__ == "__main__":
     
 
     """ Loading model """
-    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
+    from focal_loss import BinaryFocalLoss
+    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'BinaryFocalLoss': BinaryFocalLoss(gamma=0.2)}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
     model.evaluate(test_dataset, batch_size=2)
@@ -117,6 +123,7 @@ if __name__ == "__main__":
         final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
         
         """ Saving the predicted mask along with the image and GT """
+        create_dir(os.path.join('..', 'results', EXPERIMENT))
         save_image_path = os.path.join('..', 'results', EXPERIMENT, str(i))
         plt.savefig(save_image_path)
         

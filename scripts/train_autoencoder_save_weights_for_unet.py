@@ -4,6 +4,8 @@ Created on Sat Feb 19 21:03:12 2022
 
 @author: manos
 """
+from tensorflow.keras.optimizers import Adam
+
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
@@ -82,11 +84,11 @@ if __name__ == "__main__":
     # img_array = np.reshape(img_data, (len(img_data), W, H, 1))
     # img_array = img_array.astype('float32') / 255.
     
-    dataset = tf_dataset(images, batch=1)
+    dataset = tf_dataset(images, batch=16)
     
     """ Define the autoencoder model """
     autoencoder_model=build_autoencoder((W, H, 1))
-    autoencoder_model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+    autoencoder_model.compile(optimizer=Adam(0.01), loss='mean_squared_error', metrics=['accuracy'])
     print(autoencoder_model.summary())
     
     """ Train the autoencoder """

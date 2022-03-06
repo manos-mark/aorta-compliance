@@ -3,6 +3,7 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
+from tf_notification_callback import TelegramCallback
 import numpy as np
 import cv2
 from glob import glob
@@ -21,6 +22,8 @@ from split_dataset import train_val_test_split
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
+from models.attention_unet_model import build_attention_unet
+from models.attention_res_unet_model import build_attention_res_unet
 from preprocessing import augment, crop_and_pad, limiting_filter, contrast_stretching
 import datetime
 
@@ -29,7 +32,7 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "test"
+EXPERIMENT = "att-res-u-net_lr_0.001-batch_2-dice_loss"
 
 def create_dir(path):
     """ Create a directory. """
@@ -96,7 +99,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     batch_size = 1
-    lr = 1e-5
+    lr = 1e-2
     num_epochs = 200
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
     csv_path = os.path.join("..", "output", EXPERIMENT, "data.csv")
@@ -123,7 +126,8 @@ if __name__ == "__main__":
     # ])
     
     """ Model """
-    model = build_res_unet((H, W, 1), data_augmentation)
+    from focal_loss import BinaryFocalLoss
+    model = build_attention_res_unet((H, W, 1))
     # pre_trained_unet_model.load_weights('unet_model_pretrained.h5')
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
@@ -148,12 +152,18 @@ if __name__ == "__main__":
     start = datetime.datetime.now()
     log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', start.strftime("%Y%m%d-%H%M%S"))
 
+    telegram_callback = TelegramCallback('5175590478:AAHP5_dnqpimmBt83-Z5EF2KSV3k1cqcElo',
+                                        '1939791669',
+                                        'CNN Model',
+                                        # ['loss', 'val_loss'],
+                                        False)
+
     callbacks = [
         TensorBoard(log_dir=log_dir, histogram_freq=1, write_images=True),
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
         ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
         CSVLogger(csv_path),
-        EarlyStopping(monitor='val_loss', patience=10)
+        EarlyStopping(monitor='val_loss', patience=10),
     ]
 
     model.fit(
