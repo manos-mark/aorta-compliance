@@ -26,70 +26,16 @@ from models.attention_unet_model import build_attention_unet
 from models.attention_res_unet_model import build_attention_res_unet
 from preprocessing import augment, crop_and_pad, limiting_filter, contrast_stretching
 import datetime
+from utils import *
 
-
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "att-res-u-net_lr_0.001-batch_2-dice_loss"
-
-def create_dir(path):
-    """ Create a directory. """
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-def load_data(path, split=0.2):
-    images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
-    masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
-    return train_val_test_split(images, masks, split)
-
-def read_image(path):
-    dcm = dicom.dcmread(path)
-    x = dcm.pixel_array
-    x = contrast_stretching(x)
-    x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
-    x = x.astype(np.float32)
-    x = np.expand_dims(x, axis=-1)
-    return x
-
-def read_mask(path):
-    x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
-    x = x > 0.5
-    x = x.astype(np.float32)
-    x = np.expand_dims(x, axis=-1)
-    return x
-
-def tf_parse(x, y):
-    def _parse(x, y):
-        x = x.decode()
-        y = y.decode()
-
-        x = read_image(x)
-        y = read_mask(y)
-        return x, y
-
-    x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
-    x.set_shape([H, W, 1])
-    y.set_shape([H, W, 1])
-    
-    return x, y
-
-def tf_dataset(X, Y, batch=2):
-    dataset = tf.data.Dataset.from_tensor_slices((X, Y))
-    dataset = dataset.cache()
-    dataset = dataset.shuffle(buffer_size=200)
-    dataset = dataset.map(tf_parse)
-    dataset = dataset.batch(batch)
-    dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
-    
-    return dataset
-
+EXPERIMENT = "att-res-u-net_lr_0.001-batch_8-dice_loss"
 
 if __name__ == "__main__":
+    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    
     """ Seeding """
     np.random.seed(42)
     tf.random.set_seed(42)
@@ -98,9 +44,10 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 1
-    lr = 1e-2
+    batch_size = 8
+    lr = 1e-3
     num_epochs = 200
+
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
     csv_path = os.path.join("..", "output", EXPERIMENT, "data.csv")
 

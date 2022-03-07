@@ -15,16 +15,7 @@ import pandas as pd
 
 from metrics import dice_loss, dice_coef, iou
 from train import load_data, create_dir, tf_dataset, read_image, read_mask
-
-
-H = 256
-W = 256
-EXPERIMENT = 'attention-u-net_not-augmented_split-patients'
-
-def create_dir(path):
-    """ Create a directory. """
-    if not os.path.exists(path):
-        os.makedirs(path)
+from utils import create_dir
 
 def interpret_training_results():
     log_data = pd.read_csv(os.path.join('..', 'output', EXPERIMENT, 'data.csv'))
@@ -64,6 +55,10 @@ def interpret_training_results():
         title='Recall vs Validation Recall'
     )
     
+""" Global parameters """
+H = 256
+W = 256
+EXPERIMENT = 'attention-u-net_not-augmented_split-patients'
 
 if __name__ == "__main__":
     # interpret_training_results()
