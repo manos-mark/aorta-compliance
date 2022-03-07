@@ -1,3 +1,40 @@
+import pydicom
+import numpy as np
+from natsort import natsorted
+import os
+from glob import glob
+from preprocessing import contrast_stretching, crop_and_pad
+import tensorflow as tf
+import cv2
+
+""" Global parameters """
+H = 256
+W = 256
+
+def train_val_test_split(images, masks, split):
+    
+    image_names = [i.split(os.sep)[-1] for i in images]
+    image_names = np.unique([i.split('_')[0] for i in image_names])
+    
+    mask_names = [i.split(os.sep)[-1] for i in masks]
+    mask_names = np.unique([i.split('_')[0] for i in mask_names])
+    
+    split_size = int(len(image_names) * split)
+    splitted_ids = np.split(image_names, [split_size, 2*split_size])
+    
+    """ Get training dataset """
+    images_train = [i for i in images if i[18:].split('_')[0] in splitted_ids[2]]
+    masks_train = [i for i in masks if i[17:].split('_')[0] in splitted_ids[2]]
+    
+    """ Get validation dataset """
+    images_valid = [i for i in images if i[18:].split('_')[0] in splitted_ids[1]]
+    masks_valid = [i for i in masks if i[17:].split('_')[0] in splitted_ids[1]]
+    
+    """ Get test dataset """
+    images_test = [i for i in images if i[18:].split('_')[0] in splitted_ids[0]]
+    masks_test = [i for i in masks if i[17:].split('_')[0] in splitted_ids[0]]
+
+    return (images_train, masks_train), (images_valid, masks_valid), (images_test, masks_test)
 
 def create_dir(path):
     """ Create a directory. """
@@ -10,7 +47,7 @@ def load_data(path, split=0.2):
     return train_val_test_split(images, masks, split)
 
 def read_image(path):
-    dcm = dicom.dcmread(path)
+    dcm = pydicom.dcmread(path)
     x = dcm.pixel_array
     x = contrast_stretching(x)
     x = crop_and_pad(x, W, H)

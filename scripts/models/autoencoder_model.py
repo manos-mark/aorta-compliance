@@ -14,11 +14,11 @@ from tensorflow.keras.layers import Activation, MaxPool2D, Concatenate
 def conv_block(input, num_filters):
     x = Conv2D(num_filters, 3, padding="same")(input)
     x = BatchNormalization()(x)   #Not in the original network. 
-    x = Activation("relu")(x)
+    x = Activation("tanh")(x)
 
     x = Conv2D(num_filters, 3, padding="same")(x)
     x = BatchNormalization()(x)  #Not in the original network
-    x = Activation("relu")(x)
+    x = Activation("tanh")(x)
 
     return x
 

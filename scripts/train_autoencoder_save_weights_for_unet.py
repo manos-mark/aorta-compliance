@@ -4,30 +4,22 @@ Created on Sat Feb 19 21:03:12 2022
 
 @author: manos
 """
-from tensorflow.keras.optimizers import Adam
 
 import os
 import datetime
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-import random
 import numpy as np
-import cv2
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.preprocessing.image import img_to_array
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, UpSampling2D, Dropout, Input, Conv2DTranspose
 from tensorflow.keras.models import Sequential
 from keras.models import Model
-from matplotlib import pyplot as plt
 from glob import glob
-from tqdm import tqdm
-import pydicom
-from preprocessing import crop_and_pad, contrast_stretching
-from models.autoencoder_model import build_autoencoder, build_encoder
+from models.autoencoder_model import build_autoencoder
 from models.unet_model import build_unet
 import tensorflow as tf
-import pydicom as dicom
-from utils import read_image
+from utils import read_image, load_data
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 def tf_parse(x):
@@ -54,7 +46,7 @@ def tf_dataset(X, batch=1):
 
 """ Global parameters """
 H=W=256
-EXPERIMENT = "autoencoder-batch_16-epochs_500-adadelta-mse"
+EXPERIMENT = "autoencoder-batch_16-epochs_500-adadelta-mse-tanh"
 
 if __name__ == "__main__":
     """ Seeding """
@@ -70,8 +62,10 @@ if __name__ == "__main__":
 
     """ Read images """
     dataset_path = os.path.join('..', 'dataset')
-    images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
-    dataset = tf_dataset(images, batch=16)
+
+    # images = sorted(glob('../dataset/diana_segmented/**/*.IMA', recursive=True))
+    (train_x, _), (_, _), (_, _) = load_data(dataset_path)
+    dataset = tf_dataset(train_x, batch=16)
     
     """ Define the autoencoder model """
     autoencoder_model=build_autoencoder((W, H, 1))

@@ -6,8 +6,6 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 from tf_notification_callback import TelegramCallback
 import numpy as np
 import cv2
-from glob import glob
-from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint, CSVLogger, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
@@ -18,13 +16,11 @@ from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
 
-from split_dataset import train_val_test_split
 from metrics import dice_loss, dice_coef, iou
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
 from models.attention_unet_model import build_attention_unet
 from models.attention_res_unet_model import build_attention_res_unet
-from preprocessing import augment, crop_and_pad, limiting_filter, contrast_stretching
 import datetime
 from utils import *
 
@@ -106,7 +102,7 @@ if __name__ == "__main__":
                                         False)
 
     callbacks = [
-        TensorBoard(log_dir=log_dir, histogram_freq=1, write_images=True),
+        TensorBoard(log_dir=log_dir, histogram_freq=1),
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
         ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
         CSVLogger(csv_path),
