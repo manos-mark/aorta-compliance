@@ -46,7 +46,7 @@ def tf_dataset(X, batch=1):
 
 """ Global parameters """
 H=W=256
-EXPERIMENT = "autoencoder-batch_16-epochs_500-adadelta-mse-tanh"
+EXPERIMENT = "autoencoder-batch_16-epochs_500-adam-mse-relu"
 
 if __name__ == "__main__":
     """ Seeding """
@@ -78,9 +78,9 @@ if __name__ == "__main__":
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
 
     callbacks = [
-        TensorBoard(log_dir=log_dir, histogram_freq=1, write_images=True),
-        ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, min_lr=1e-7, verbose=1),
-        EarlyStopping(monitor='loss', patience=15),
+        TensorBoard(log_dir=log_dir, histogram_freq=1),
+        ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, min_lr=1e-5, verbose=1),
+        EarlyStopping(monitor='loss', patience=10),
     ]
 
     history = autoencoder_model.fit(

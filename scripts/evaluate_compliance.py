@@ -23,7 +23,7 @@ import os
 
 
 def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
-    df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
+    df = pd.read_excel(excel_path, index_col=0)
     
     syst_press, diast_press, asc_min, asc_max, asc_compliance, \
         asc_distensibility, desc_min, desc_max, \
@@ -38,7 +38,7 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     
 
 def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
-    df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
+    df = pd.read_excel(excel_path, index_col=0)
             
     compliance = None
     if asc_or_desc == 'asc':
@@ -50,12 +50,12 @@ def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
 
 
 def fetch_syst_press_from_excel(patient_id, excel_path):
-    df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
+    df = pd.read_excel(excel_path, index_col=0)
     return df.loc[patient_id, 'PS']
 
 
 def fetch_diast_press_from_excel(patient_id, excel_path):
-    df = pd.read_excel(excel_path, sheet_name='Compliance Dijon', index_col=0)
+    df = pd.read_excel(excel_path, index_col=0)
     return df.loc[patient_id, 'PD']
 
         
@@ -79,7 +79,7 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'exp3'
+    EXPERIMENT = 'att-res-u-net_lr_0.01-batch_1-dice_loss'
     patient_id = 'D-0002'
     
     """ File paths """
