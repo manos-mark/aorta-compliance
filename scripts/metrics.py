@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-smooth = 1#1e-15 
+smooth = 1e-15 
 
 def iou(y_true, y_pred):
     def f(y_true, y_pred):

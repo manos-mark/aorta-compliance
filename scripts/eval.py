@@ -58,7 +58,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'attention-u-net_not-augmented_split-patients'
+EXPERIMENT = 'u-net_lr_0.0001-batch_1-dice_loss-pretrained_on_AORTE'
 
 if __name__ == "__main__":
     # interpret_training_results()
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     """ Dataset """
     dataset_path = os.path.join('..', 'dataset')
     
-    (_, _), (_, _), (test_x, test_y) = load_data(dataset_path)
+    (_, _), (_, _), (test_x, test_y) = load_data(dataset_path, split=1)
     
 #    print(f"Train: {len(train_x)} - {len(train_y)}")
 #    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     """ Loading model """
     from focal_loss import BinaryFocalLoss
-    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'BinaryFocalLoss': BinaryFocalLoss(gamma=0.2)}):
+    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
     model.evaluate(test_dataset, batch_size=2)

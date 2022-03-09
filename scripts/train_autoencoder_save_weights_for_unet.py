@@ -18,6 +18,7 @@ from keras.models import Model
 from glob import glob
 from models.autoencoder_model import build_autoencoder
 from models.unet_model import build_unet
+from models.attention_res_unet_model import build_attention_res_unet
 import tensorflow as tf
 from utils import read_image, load_data
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -46,7 +47,7 @@ def tf_dataset(X, batch=1):
 
 """ Global parameters """
 H=W=256
-EXPERIMENT = "autoencoder-batch_16-epochs_500-adam-mse-relu"
+EXPERIMENT = "autoencoder-batch_16-epochs_500-adam-mse-relu-AORTE_TRAIN"
 
 if __name__ == "__main__":
     """ Seeding """
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     # lr = 1e-3
     num_epochs = 500
     loss = 'mean_squared_error' # or 'abs_squared_error'
-    optimizer = 'adadelta' # or 'adam'
+    optimizer = 'adam' # or 'adam'
 
     """ Read images """
     dataset_path = os.path.join('..', 'dataset')
@@ -89,7 +90,8 @@ if __name__ == "__main__":
             shuffle=True,
             callbacks=callbacks)
 
-    autoencoder_model.save(os.path.join('..', 'output', EXPERIMENT, 'autoencoder.h5'))
+    autoencoder_path = os.path.join('..', 'output', EXPERIMENT, 'autoencoder.h5')
+    autoencoder_model.save(autoencoder_path)
         
     """ Set weights to encoder part of the U-net (first 35 layers) """
     unet_model = build_unet((W, H, 1))

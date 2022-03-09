@@ -10,7 +10,7 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'aorte_segmented-test') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -48,6 +48,7 @@ if __name__ == '__main__':
     dicoms_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/*.ima', recursive=True))
     masks_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/ComplianceAscending.json', recursive=True))
 
+    print(len(dicoms_path))
     for mask_path in tqdm(masks_path):
         # Open contours file
         with open(mask_path) as json_file:
@@ -80,9 +81,14 @@ if __name__ == '__main__':
                 polygon = generate_polygon(image_path, points_list)
                 
                 # Remove unnecessary info
-                slide_id = slide_id.split(".")[4]
-                slide_id = "".join(slide_id)
-                
+                try:
+                    slide_id = slide_id.split(".")[4]
+                    slide_id = "".join(slide_id)
+                except:
+                    slide_id = slide_id.split(".")[0]
+                    slide_id = slide_id[-3:]
+                    slide_id = "".join(slide_id)
+
                 # Save ROIs and images
                 mask_name = case_id + '_' + patient_id + '_' + slide_id + '_ROI.png'
                 dicom_name = case_id + '_' + patient_id + '_' + slide_id + '.dcm'

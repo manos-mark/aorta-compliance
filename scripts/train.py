@@ -27,7 +27,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "att-res-u-net_lr_0.001-batch_8-dice_loss"
+EXPERIMENT = "u-net_lr_0.0001-batch_1-dice_loss"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 8
-    lr = 1e-3
+    batch_size = 1
+    lr = 1e-4
     num_epochs = 200
 
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -70,8 +70,10 @@ if __name__ == "__main__":
     
     """ Model """
     from focal_loss import BinaryFocalLoss
-    model = build_attention_res_unet((H, W, 1))
-    # pre_trained_unet_model.load_weights('unet_model_pretrained.h5')
+    model = build_unet((H, W, 1))
+    # pretrained_model_path = os.path.join('..', 'output', 
+    #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
+    # model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
@@ -106,7 +108,7 @@ if __name__ == "__main__":
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
         ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=1e-7, verbose=1),
         CSVLogger(csv_path),
-        EarlyStopping(monitor='val_loss', patience=10),
+        EarlyStopping(monitor='val_loss', patience=16),
     ]
 
     model.fit(
