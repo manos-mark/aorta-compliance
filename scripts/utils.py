@@ -6,6 +6,12 @@ from glob import glob
 from preprocessing import contrast_stretching, crop_and_pad
 import tensorflow as tf
 import cv2
+import albumentations
+from albumentations import (
+    Compose, RandomBrightness, JpegCompression, HueSaturationValue, RandomContrast, HorizontalFlip,
+    Rotate, Affine
+)
+from functools import partial
 
 """ Global parameters """
 H = 256
@@ -40,6 +46,30 @@ def create_dir(path):
     """ Create a directory. """
     if not os.path.exists(path):
         os.makedirs(path)
+
+def data_augmentation(image, mask, img_size):
+    def _data_augmentation(image, mask, img_size):
+        transforms = Compose([
+            Rotate(limit=20),
+            # RandomBrightness(limit=0.1),
+            # JpegCompression(quality_lower=85, quality_upper=100, p=0.5),
+            # HueSaturationValue(hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.5),
+            # RandomContrast(limit=0.2, p=0.5),
+            HorizontalFlip(),
+            # Affine()
+        ])
+        data = {"image":image, "mask":mask}
+        aug_data = transforms(**data)
+        aug_img = aug_data["image"]
+        aug_mask = aug_data["mask"]
+        # aug_img = tf.cast(aug_img/255.0, tf.float32)
+        # aug_img = tf.image.resize(aug_img, size=[img_size, img_size])
+        return aug_img, aug_mask
+
+    aug_img, aug_mask = tf.numpy_function(func=_data_augmentation, inp=[image, mask, img_size], Tout=[tf.float32,tf.float32])
+    # aug_img.set_shape([H, W, 1])
+    # aug_mask.set_shape([H, W, 1])
+    return aug_img, aug_mask
 
 def load_data(path, split=0.2):
     images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
@@ -80,11 +110,13 @@ def tf_parse(x, y):
     
     return x, y
 
-def tf_dataset(X, Y, batch=2):
+def tf_dataset(X, Y, batch=2, augment=False):
     dataset = tf.data.Dataset.from_tensor_slices((X, Y))
     dataset = dataset.cache()
     dataset = dataset.shuffle(buffer_size=200)
     dataset = dataset.map(tf_parse)
+    if augment:
+        dataset = dataset.map(partial(data_augmentation, img_size=W))
     dataset = dataset.batch(batch)
     dataset = dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
     

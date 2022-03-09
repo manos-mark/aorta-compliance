@@ -329,12 +329,12 @@ if __name__ == "__main__":
         rand_images.append(images[rand].pixel_array)
         
     # rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    rand_images = [bm3d_denoising(i) for i in rand_images]
+    # rand_images = [bm3d_denoising(i) for i in rand_images]
     # rand_images = [limiting_filter(i) for i in rand_images]
     # rand_images = [contrast_stretching(i) for i in rand_images]
     # rand_images = [normalize(i) for i in rand_images]
     # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
-    # rand_images = [equalize_histogram(i) for i in rand_images]
+    rand_images = [equalize_histogram(i, display=True) for i in rand_images]
     
     # rand_images = [resize(i.pixel_array) for i in rand_images]
     # rand_images = [standardization(i) for i in rand_images]

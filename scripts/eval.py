@@ -58,7 +58,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'u-net_lr_0.0001-batch_1-dice_loss-pretrained_on_AORTE'
+EXPERIMENT = 'u-net_lr_0.0001-batch_1-dice_loss-augmented'
 
 if __name__ == "__main__":
     # interpret_training_results()
@@ -72,13 +72,13 @@ if __name__ == "__main__":
     """ Dataset """
     dataset_path = os.path.join('..', 'dataset')
     
-    (_, _), (_, _), (test_x, test_y) = load_data(dataset_path, split=1)
+    (_, _), (_, _), (test_x, test_y) = load_data(dataset_path, split=0.2)
     
 #    print(f"Train: {len(train_x)} - {len(train_y)}")
 #    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
-    test_dataset = tf_dataset(test_x, test_y, batch=1)
+    test_dataset = tf_dataset(test_x, test_y, batch=1, augment=False)
     
 
     """ Loading model """

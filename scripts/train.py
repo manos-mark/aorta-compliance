@@ -24,10 +24,11 @@ from models.attention_res_unet_model import build_attention_res_unet
 import datetime
 from utils import *
 
+
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "u-net_lr_0.0001-batch_1-dice_loss"
+EXPERIMENT = "u-net_lr_0.001-batch_1-dice_loss-augmented"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 1
+    batch_size = 8
     lr = 1e-4
     num_epochs = 200
 
@@ -56,20 +57,10 @@ if __name__ == "__main__":
     print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
-    train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
-    valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
-    
-    """ Data augmentation layers """
-    data_augmentation = None
-    # data_augmentation = tf.keras.Sequential([
-    #     tf.keras.layers.RandomFlip("horizontal"),
-    #     tf.keras.layers.RandomRotation(0.2), 
-    #     tf.keras.layers.RandomZoom(height_factor=(0.2, 0.3), width_factor=(0.2, 0.3)),
-    #     tf.keras.layers.RandomTranslation(0.3, 0.3, fill_mode='reflect', interpolation='bilinear',)
-    # ])
+    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=True)
+    valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
     
     """ Model """
-    from focal_loss import BinaryFocalLoss
     model = build_unet((H, W, 1))
     # pretrained_model_path = os.path.join('..', 'output', 
     #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 

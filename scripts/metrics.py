@@ -7,8 +7,6 @@ smooth = 1e-15
 
 def iou(y_true, y_pred):
     def f(y_true, y_pred):
-        # print(y_true, y_pred)
-        # print(type(y_true), type(y_pred))
         intersection = (y_true * y_pred).sum()
         union = y_true.sum() + y_pred.sum() - intersection
         x = (intersection + smooth) / (union + smooth)
