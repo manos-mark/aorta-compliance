@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "u-net_lr_0.001-batch_1-dice_loss-augmented"
+EXPERIMENT = "u-net_lr_0.0001-batch_8-dice_loss-more-augmented"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
