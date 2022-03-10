@@ -5,12 +5,13 @@ Created on Fri Feb  4 10:37:20 2022
 @author: manos
 """
 import random
+import pickle
+
 import os
 import pydicom
 from natsort import natsorted
 from glob import glob
 import matplotlib.pyplot as plt
-import matplotlib
 from scipy import ndimage
 import numpy as np
 import bm3d
@@ -24,8 +25,8 @@ from skimage.metrics import peak_signal_noise_ratio
 from skimage import morphology, data, img_as_float, exposure
 
 
-def histogram_matching(image, reference, display=True):
-    matched = exposure.match_histograms(image, reference, channel_axis=-1)
+def histogram_matching(image, reference, display=False):
+    matched = exposure.match_histograms(image, reference, multichannel=False)
 
     if display:
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
@@ -33,17 +34,17 @@ def histogram_matching(image, reference, display=True):
         for aa in (ax1, ax2, ax3):
             aa.set_axis_off()
 
-        ax1.imshow(image)
+        ax1.imshow(image, cmap="gray")
         ax1.set_title('Source')
-        ax2.imshow(reference)
+        ax2.imshow(reference, cmap="gray")
         ax2.set_title('Reference')
-        ax3.imshow(matched)
+        ax3.imshow(matched, cmap="gray")
         ax3.set_title('Matched')
 
         plt.tight_layout()
         plt.show()
 
-def bm3d_denoising(image, display=True):
+def bm3d_denoising(image, display=False):
     bm3d_cleaned = bm3d.bm3d(image, sigma_psd=0.2, stage_arg=bm3d.BM3DStages.ALL_STAGES)
     if display:
         plt.figure()
@@ -86,12 +87,6 @@ def n4_bias_field_correction(image, display=False):
         plt.show()
     
     return output
-
-def intensity_range_standardization(images):
-    irs = IntensityRangeStandardization()
-    trained_model, transformed_images = irs.train_transform(images)
-    return transformed_images
-
 
 def plot_img_and_hist(image, axes, bins=256):
     """Plot an image along with its histogram and cumulative histogram.
@@ -137,7 +132,7 @@ def contrast_stretching(image, display=False):
         
     return img_rescale
 
-def equalize_histogram(image, display=True):
+def equalize_histogram(image, display=False):
     # Contrast stretching
     p2, p98 = np.percentile(image, (2, 98))
     img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
@@ -215,7 +210,7 @@ def upscale_with_padding(img, new_image_size=(256, 256),color=(0,0,0)):
     return result
 
     
-def resize(image, W=512, H=512, display=True):
+def resize(image, W=512, H=512, display=False):
     # resizing_func = lambda im, W,H : cv2.resize(image, (W, H))
     # resizing_func = lambda: im, W,H : upscale_with_padding(image, (W,H))
     resizing_func = lambda im, W,H : skimage.transform.resize(im, (W,H), preserve_range=True, mode='constant', anti_aliasing=True) 
@@ -289,7 +284,12 @@ def crop_and_pad(img, cropx, cropy, display=False):
 
 
 def normalize(image):
-    x = image/np.max(image)
+#    x = (image - image.mean()) / image.std()
+#    x = image/np.max(image)
+    x = (image - np.min(image)) / (np.max(image) - np.min(image))
+    
+#    import scipy
+#    x = scipy.stats.zscore(image)
     x = x.astype(np.float32)
     
     return x
@@ -316,11 +316,41 @@ def limiting_filter(img, threshold=8, display=False):
         
     return output
 
+def train_irs_model(images, output_path):
+    irs = IntensityRangeStandardization()
+    trained_model, transformed_images = irs.train_transform(images)
+    
+    with open(output_path, 'wb') as f:
+        pickle.dump(irs, f)
+
+    return trained_model
+
+def intensity_range_standardization(image, model_path='irs_model.pkl', display=False):
+    irs = None
+    with open(model_path, 'rb') as f:
+        irs = pickle.load(f)
+    
+    if irs is not None:
+        transformed_image = irs.transform(image)
+        
+        if display:
+            plt.figure()
+            plt.subplot(221, title='input image')
+            plt.imshow(image, cmap='gray')
+            plt.subplot(222)
+            plt.hist(image)
+            plt.subplot(223, title='output image')
+            plt.imshow(transformed_image, cmap='gray')
+            plt.subplot(224)
+            plt.hist(transformed_image)
+            plt.show()
+        return transformed_image
+
 if __name__ == "__main__":
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
     
-    images = [pydicom.read_file(IMAGES_PATH + os.sep + s) for s in natsorted(os.listdir(IMAGES_PATH))]
+    images = [(pydicom.read_file(IMAGES_PATH + os.sep + s)).pixel_array for s in natsorted(os.listdir(IMAGES_PATH))]
     # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
     
     random.shuffle(images)
@@ -328,22 +358,26 @@ if __name__ == "__main__":
     rand_images = []
     for j in range(20):
         rand = random.randint(0, len(images)-1)
-        rand_images.append(images[rand].pixel_array)
+        rand_images.append(images[rand])
         
-    # rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    # rand_images = [bm3d_denoising(i) for i in rand_images]
-    # rand_images = [limiting_filter(i) for i in rand_images]
-    # rand_images = [contrast_stretching(i) for i in rand_images]
-    # rand_images = [normalize(i) for i in rand_images]
-    # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+#    rand_images = [n4_bias_field_correction(i) for i in rand_images]
+    rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+    rand_images = [bm3d_denoising(i) for i in rand_images]
+#    rand_images = [limiting_filter(i) for i in rand_images]
+    rand_images = [contrast_stretching(i) for i in rand_images]
     # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
 
-    reference_img = (pydicom.dcmread('../dataset/reference_img.dcm')).pixel_array
-    rand_images = [histogram_matching(i, reference_img) for i in rand_images]
+#    reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
+#    reference_img = crop_and_pad(reference_img, 256, 256)
+#    rand_images = [histogram_matching(i, reference_img) for i in rand_images]
     
-    # rand_images = [resize(i.pixel_array) for i in rand_images]
-    # rand_images = [standardization(i) for i in rand_images]
-    # rand_images = [intensity_range_standardization(i) for i in rand_images]
+#    rand_images = [resize(i.pixel_array) for i in rand_images]
+#    rand_images = [standardization(i) for i in rand_images]
+    
+
+    train_irs_model(images, 'irs_model.pkl')
+    rand_images = [intensity_range_standardization(i, 'irs_model.pkl', False) for i in rand_images]
+#    rand_images = [normalize(i) for i in rand_images]
     
     # image_after = images[rand]
     # mask = masks[rand]
