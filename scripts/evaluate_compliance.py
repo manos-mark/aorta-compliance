@@ -108,7 +108,7 @@ if __name__ == '__main__':
         
         """ Segment aorta """
         aorta = segment_aorta(model, image)
-        # aorta = crop_and_pad(aorta[:,:,0], W, H)
+        aorta = crop_and_pad(aorta[:,:,0], W, H)
         # image = crop_and_pad(image[:,:,0], W, H)
         
         plt.subplot(title='Predicted image & mask')
@@ -122,6 +122,7 @@ if __name__ == '__main__':
 
     plt.subplot(title='Area over time')
     plt.plot(area_per_slice)
+    plt.show()
     # """ Get the minimum and maximum areas across all slices """        
     # min_area = min(area_per_slice)
     # max_area = max(area_per_slice)
