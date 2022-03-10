@@ -80,10 +80,10 @@ def segment_aorta(model, image, display=False):
 
 if __name__ == '__main__':
     EXPERIMENT = 'u-net_lr_0.0001-batch_8-dice_loss-more-pretrained-augmented-multi-centre'
-    patient_id = 'D-0002'
+    patient_id = 'D-0008'
     
     """ File paths """
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented', '000151041932_ALEXANDRE ROBERT')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented', '000000359340_BOIVIN FRANCK')
     excel_path = os.path.join('..', 'dataset', 'diana_segmented', 'Patient_Compliance_Dec2020.xlsx')
        
     """ Loading patient images """
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         """ Segment aorta """
         aorta = segment_aorta(model, image)
         aorta = crop_and_pad(aorta[:,:,0], W, H)
-        # image = crop_and_pad(image[:,:,0], W, H)
+        image = crop_and_pad(image[:,:,0], W, H)
         
         plt.subplot(title='Predicted image & mask')
         plt.imshow(image, cmap='gray')
@@ -120,17 +120,23 @@ if __name__ == '__main__':
         area = cv2.countNonZero(aorta)
         area_per_slice.append(area)
 
+    """ Plot area over time """
     plt.subplot(title='Area over time')
     plt.plot(area_per_slice)
+    plt.xlabel('Slices')
+    plt.ylabel('Area')
+    plt.ylim(1400,2600)
     plt.show()
-    # """ Get the minimum and maximum areas across all slices """        
-    # min_area = min(area_per_slice)
-    # max_area = max(area_per_slice)
     
-    """ Get the median of 5 values close to minimum and maximum areas across all slices """
+    """ Get the minimum and maximum areas across all slices """        
+    min_area = min(area_per_slice)
+    max_area = max(area_per_slice)
+    
     area_per_slice.sort()
-    min_area = np.median(np.array(area_per_slice[:5]))
-    max_area = np.median(np.array(area_per_slice[5:]))
+
+    # """ Get the median of 5 values close to minimum and maximum areas across all slices """
+    # min_area = np.median(np.array(area_per_slice[:5]))
+    # max_area = np.median(np.array(area_per_slice[5:]))
     
     """ Compute global ascending compliance """
     computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
