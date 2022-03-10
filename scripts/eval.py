@@ -8,11 +8,10 @@ from glob import glob
 from tqdm import tqdm
 import tensorflow as tf
 from tensorflow.keras.utils import CustomObjectScope
-import pydicom as dicom
-from itertools import islice
+import pydicom 
+from preprocessing import crop_and_pad
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from metrics import dice_loss, dice_coef, iou
 from train import load_data, create_dir, tf_dataset, read_image, read_mask
 from utils import create_dir
@@ -58,7 +57,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'u-net_lr_0.0001-batch_1-dice_loss-augmented'
+EXPERIMENT = 'u-net_lr_0.0001-batch_8-dice_loss-more-pretrained-augmented-multi-centre'
 
 if __name__ == "__main__":
     # interpret_training_results()
@@ -90,6 +89,7 @@ if __name__ == "__main__":
     
     
     for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
+        H, W = ((pydicom.dcmread(x)).pixel_array).shape
         x = read_image(x)
         y = read_mask(y)
         
@@ -99,6 +99,8 @@ if __name__ == "__main__":
         """ Predicting the mask """
         y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
         y_pred = y_pred.astype(np.float32)
+        y_pred = crop_and_pad(y_pred[:,:,0], W, H)
+        x = crop_and_pad(x[:,:,0], W, H)
 
         # plt.subplot(2,2,1, title='Gound truth mask')
         # plt.imshow(y, cmap='gray')
