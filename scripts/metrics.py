@@ -2,8 +2,14 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
-
+from scipy.spatial.distance import directed_hausdorff
 smooth = 1e-15 
+
+def hausdorff_distance(y_true, y_pred):
+    def f(y_true, y_pred, seed=0):
+        return directed_hausdorff(y_true, y_pred, seed)
+    return tf.numpy_function(f, [y_true, y_pred], tf.float32)
+
 
 def iou(y_true, y_pred):
     def f(y_true, y_pred):

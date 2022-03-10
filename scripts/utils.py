@@ -3,7 +3,7 @@ import numpy as np
 from natsort import natsorted
 import os
 from glob import glob
-from preprocessing import contrast_stretching, crop_and_pad
+from preprocessing import contrast_stretching, crop_and_pad, bm3d_denoising
 import tensorflow as tf
 import cv2
 import albumentations
@@ -81,7 +81,9 @@ def read_image(path):
     x = dcm.pixel_array
     x = contrast_stretching(x)
     x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
+    # x = bm3d_denoising(x)
+    # x = x/np.max(x)
+    x = (x - np.min(x)) / (np.max(x) - np.min(x))
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
     return x
@@ -89,7 +91,8 @@ def read_image(path):
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     x = crop_and_pad(x, W, H)
-    x = x/np.max(x)
+    # x = x/np.max(x)
+    x = (x - np.min(x)) / (np.max(x) - np.min(x))
     x = x > 0.5
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
