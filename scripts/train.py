@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "u-net_lr_0.0001-batch_8-dice_loss-more-augmented"
+EXPERIMENT = "u-net_lr_0.0001-batch_8-dice_loss-more-pretrained-augmented-multi-centre"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -62,9 +62,9 @@ if __name__ == "__main__":
     
     """ Model """
     model = build_unet((H, W, 1))
-    # pretrained_model_path = os.path.join('..', 'output', 
-    #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
-    # model.load_weights(pretrained_model_path)
+    pretrained_model_path = os.path.join('..', 'output', 
+        'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
+    model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, Recall(), Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     

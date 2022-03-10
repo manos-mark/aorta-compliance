@@ -79,7 +79,7 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'att-res-u-net_lr_0.01-batch_1-dice_loss'
+    EXPERIMENT = 'u-net_lr_0.0001-batch_8-dice_loss-more-pretrained-augmented-multi-centre'
     patient_id = 'D-0002'
     
     """ File paths """
