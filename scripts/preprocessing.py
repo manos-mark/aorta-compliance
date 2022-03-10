@@ -10,6 +10,7 @@ import pydicom
 from natsort import natsorted
 from glob import glob
 import matplotlib.pyplot as plt
+import matplotlib
 from scipy import ndimage
 import numpy as np
 import bm3d
@@ -22,6 +23,25 @@ import skimage
 from skimage.metrics import peak_signal_noise_ratio
 from skimage import morphology, data, img_as_float, exposure
 
+
+def histogram_matching(image, reference, display=True):
+    matched = exposure.match_histograms(image, reference, channel_axis=-1)
+
+    if display:
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
+                                            sharex=True, sharey=True)
+        for aa in (ax1, ax2, ax3):
+            aa.set_axis_off()
+
+        ax1.imshow(image)
+        ax1.set_title('Source')
+        ax2.imshow(reference)
+        ax2.set_title('Reference')
+        ax3.imshow(matched)
+        ax3.set_title('Matched')
+
+        plt.tight_layout()
+        plt.show()
 
 def bm3d_denoising(image, display=True):
     bm3d_cleaned = bm3d.bm3d(image, sigma_psd=0.2, stage_arg=bm3d.BM3DStages.ALL_STAGES)
@@ -296,24 +316,6 @@ def limiting_filter(img, threshold=8, display=False):
         
     return output
 
-def augment(image, mask, display=True):
-    augmented_image = tf.image.random_flip_left_right(image, 6)
-    # augmented_image = tf.image.random_flip_up_down(augmented_image)
-    # augmented_image = tf.image.rot90(augmented_image)
-    
-    # fig, ((ax1,ax2), (ax3,ax4)) = plt.subplots(2, 2)
-    # ax1.imshow(image[0], cmap="gray")
-    # ax1.title.set_text("Original Image")
-    # ax2.imshow(mask[0], cmap="gray")
-    # ax2.title.set_text("Original mask")
-    
-    # ax3.imshow(augmented_image[0], cmap="gray")
-    # ax3.title.set_text("Augmented Image")
-    # ax4.imshow(mask[0], cmap="gray")
-    # ax4.title.set_text("Augmented mask")
-        
-    return (augmented_image, mask)
-
 if __name__ == "__main__":
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
@@ -334,7 +336,10 @@ if __name__ == "__main__":
     # rand_images = [contrast_stretching(i) for i in rand_images]
     # rand_images = [normalize(i) for i in rand_images]
     # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
-    rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+    # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+
+    reference_img = (pydicom.dcmread('../dataset/reference_img.dcm')).pixel_array
+    rand_images = [histogram_matching(i, reference_img) for i in rand_images]
     
     # rand_images = [resize(i.pixel_array) for i in rand_images]
     # rand_images = [standardization(i) for i in rand_images]
