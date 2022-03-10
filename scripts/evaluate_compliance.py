@@ -120,6 +120,8 @@ if __name__ == '__main__':
         area = cv2.countNonZero(aorta)
         area_per_slice.append(area)
 
+    plt.subplot(title='Area over time')
+    plt.plot(area_per_slice)
     # """ Get the minimum and maximum areas across all slices """        
     # min_area = min(area_per_slice)
     # max_area = max(area_per_slice)
