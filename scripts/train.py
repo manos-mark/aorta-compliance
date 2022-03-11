@@ -16,7 +16,7 @@ from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
 
-from metrics import dice_loss, dice_coef, iou, hausdorff_distance
+from metrics import dice_loss, dice_coef, iou, hausdorff
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
 from models.attention_unet_model import build_attention_unet
@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "att-ress-u-net_lr_0.0001-batch_8-dice_loss-augmented-multi_centre-min_max_normalization"
+EXPERIMENT = "att-ress-u-net_lr_0.001-batch_8-dice_loss-augmented"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     batch_size = 8
-    lr = 1e-4
+    lr = 1e-3
     num_epochs = 200
 
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # pretrained_model_path = os.path.join('..', 'output', 
     #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
     # model.load_weights(pretrained_model_path)
-    metrics = [dice_coef, iou, hausdorff_distance, Recall(), Precision()]
+    metrics = [dice_coef, iou, hausdorff, Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
     """ Preview a random image and mask after processing """
