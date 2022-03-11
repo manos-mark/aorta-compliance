@@ -128,18 +128,21 @@ if __name__ == '__main__':
     plt.ylim(np.min(area_per_slice)-500, np.max(area_per_slice)+500)
     plt.show()
     
+    
     """ Get the minimum and maximum areas across all slices """        
     min_area = min(area_per_slice)
     max_area = max(area_per_slice)
     
-    area_per_slice.sort()
-
+    print('Original min, max: ', original_min, original_max)
+    print('Predicted asc_min, asc_max: ', min_area, max_area)
+    
     # """ Get the median of 5 values close to minimum and maximum areas across all slices """
+    # area_per_slice.sort()
     # min_area = np.median(np.array(area_per_slice[:5]))
     # max_area = np.median(np.array(area_per_slice[5:]))
     
     """ Compute global ascending compliance """
     computed_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         
-    print('Computed ascending compliance', computed_compliance)
     print('Original ascending compliance', original_compliance)
+    print('Predicted ascending compliance', computed_compliance)
