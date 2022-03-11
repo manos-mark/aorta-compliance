@@ -125,7 +125,7 @@ if __name__ == '__main__':
     plt.plot(area_per_slice)
     plt.xlabel('Slices')
     plt.ylabel('Area')
-    plt.ylim(1400,2600)
+    plt.ylim(np.min(area_per_slice)-500, np.max(area_per_slice)+500)
     plt.show()
     
     """ Get the minimum and maximum areas across all slices """        
