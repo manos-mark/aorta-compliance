@@ -21,10 +21,10 @@ def train_val_test_split(images, masks, split):
     
     image_names = [i.split(os.sep)[-1] for i in images]
     image_names = np.unique([i.split('_')[0] for i in image_names])
-    
-    mask_names = [i.split(os.sep)[-1] for i in masks]
-    mask_names = np.unique([i.split('_')[0] for i in mask_names])
-    
+
+    np.random.seed(0)
+    np.random.shuffle(image_names)
+
     split_size = int(len(image_names) * split)
     splitted_ids = np.split(image_names, [split_size, 2*split_size])
     
