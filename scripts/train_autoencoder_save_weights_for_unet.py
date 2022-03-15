@@ -47,7 +47,7 @@ def tf_dataset(X, batch=1):
 
 """ Global parameters """
 H=W=256
-EXPERIMENT = "autoencoder-batch_16-epochs_500-adam-mse-relu-AORTE_TRAIN"
+EXPERIMENT = "autoencoder-batch_16-epochs_500-adam-mse-relu"
 
 if __name__ == "__main__":
     """ Seeding """

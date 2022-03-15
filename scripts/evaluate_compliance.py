@@ -133,8 +133,8 @@ if __name__ == '__main__':
     min_area = min(area_per_slice)
     max_area = max(area_per_slice)
     
-    print('Original min, max: ', original_min, original_max)
-    print('Predicted asc_min, asc_max: ', min_area, max_area)
+    print('Original min, max areas: ', original_min, original_max)
+    print('Predicted min, max areas: ', min_area, max_area)
     
     # """ Get the median of 5 values close to minimum and maximum areas across all slices """
     # area_per_slice.sort()

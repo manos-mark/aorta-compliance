@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "att-ress-u-net_lr_0.001-batch_8-dice_loss-augmented"
+EXPERIMENT = "unet_lr_0.0001-batch_8-dice_loss-NOT_augmented-multi-centre-shuffle_data"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -57,14 +57,14 @@ if __name__ == "__main__":
     print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
-    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=True)
+    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=False)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
     
     """ Model """
-    model = build_attention_res_unet((H, W, 1))
-    # pretrained_model_path = os.path.join('..', 'output', 
-    #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
-    # model.load_weights(pretrained_model_path)
+    model = build_unet((H, W, 1))
+    pretrained_model_path = os.path.join('..', 'output', 
+        'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
+    model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, hausdorff, Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     
@@ -109,11 +109,3 @@ if __name__ == "__main__":
         callbacks=callbacks
     )
     
-    end = datetime.datetime.now()
-    diff = end-start
-    days, seconds = diff.days, diff.seconds
-    hours = days * 24 + seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-    
-    print(f"Total training time: {hours} hours \t {minutes} minutes \t {seconds} seconds")

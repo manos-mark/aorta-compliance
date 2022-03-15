@@ -12,7 +12,7 @@ import pydicom
 from preprocessing import crop_and_pad
 import matplotlib.pyplot as plt
 import pandas as pd
-from metrics import dice_loss, dice_coef, iou
+from metrics import dice_loss, dice_coef, iou, hausdorff
 from train import load_data, create_dir, tf_dataset, read_image, read_mask
 from utils import create_dir
 
@@ -57,7 +57,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'u-net_lr_0.0001-batch_8-dice_loss-more-pretrained-augmented-multi-centre'
+EXPERIMENT = 'unet_lr_0.001-batch_8-dice_loss-augmented-multi-centre'
 
 if __name__ == "__main__":
     # interpret_training_results()
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     """ Loading model """
     from focal_loss import BinaryFocalLoss
-    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
+    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
     model.evaluate(test_dataset, batch_size=2)
