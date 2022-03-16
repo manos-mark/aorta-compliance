@@ -1,9 +1,11 @@
 import os
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
+import datetime
 import numpy as np
-import cv2
+from tensorflow.keras.callbacks import CSVLogger
 from glob import glob
 from tqdm import tqdm
 import tensorflow as tf
@@ -57,7 +59,8 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'unet_lr_0.001-batch_8-dice_loss-augmented-multi-centre'
+EXPERIMENT = 'att-res-unet-diana-lr_0.001-batch_8-augmented'
+OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
     # interpret_training_results()
@@ -67,6 +70,7 @@ if __name__ == "__main__":
 
     """ Directory for storing files """
     create_dir("results")
+    create_dir(OUTPUT_FOLDER_PATH)
 
     """ Dataset """
     dataset_path = os.path.join('..', 'dataset')
@@ -81,47 +85,46 @@ if __name__ == "__main__":
     
 
     """ Loading model """
-    from focal_loss import BinaryFocalLoss
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
-    model.evaluate(test_dataset, batch_size=2)
-    
-    
-    for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
-        H, W = ((pydicom.dcmread(x)).pixel_array).shape
-        x = read_image(x)
-        y = read_mask(y)
-        
-        """ Extracing the image name. """
-        # image_name = test_image.split("/")[-1]
-        
-        """ Predicting the mask """
-        y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
-        y_pred = y_pred.astype(np.float32)
-        y_pred = crop_and_pad(y_pred[:,:,0], W, H)
-        x = crop_and_pad(x[:,:,0], W, H)
+    callbacks = [
+        CSVLogger(os.path.join("..", "output", EXPERIMENT, "test.csv"))
+    ]
 
-        # plt.subplot(2,2,1, title='Gound truth mask')
-        # plt.imshow(y, cmap='gray')
-        # plt.subplot(2,2,2, title='Gound truth image & mask')
-        # plt.imshow(x, cmap='gray')
-        # plt.imshow(y, cmap='jet', alpha=0.2)
+    h = model.evaluate(test_dataset, batch_size=2, callbacks=callbacks)
+    
+    print(h)
+    
+    # for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
+    #     H, W = ((pydicom.dcmread(x)).pixel_array).shape
+    #     x = read_image(x)
+    #     y = read_mask(y)
+        
+    #     """ Extracing the image name. """
+    #     # image_name = test_image.split("/")[-1]
+        
+    #     """ Predicting the mask """
+    #     y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
+    #     y_pred = y_pred.astype(np.float32)
+    #     # y_pred = crop_and_pad(y_pred[:,:,0], W, H)
+    #     # x = crop_and_pad(x[:,:,0], W, H)
+
+    #     fig = plt.figure(figsize=(15,15))
+    #     plt.subplot(2,2,1, title='Gound truth mask')
+    #     plt.imshow(y, cmap='gray')
+    #     plt.subplot(2,2,2, title='Image and ground truth mask')
+    #     plt.imshow(x, cmap='gray')
+    #     plt.imshow(y, cmap='jet', alpha=0.2)
          
-        # plt.subplot(2,2,3, title='Predicted mask')
-        # plt.imshow(y_pred, cmap='gray')
-        # plt.subplot(2,2,4, title='Predicted image & mask')
-        # plt.imshow(x, cmap='gray')
-        # final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
-        # plt.tight_layout()
-
-        plt.subplot(title='Predicted image & mask')
-        plt.imshow(x, cmap='gray')
-        final = plt.imshow(y_pred, cmap='jet', alpha=0.2)
+    #     plt.subplot(2,2,3, title='Predicted mask')
+    #     plt.imshow(y_pred, cmap='gray')
+    #     plt.subplot(2,2,4, title='Image and predicted mask')
+    #     plt.imshow(x, cmap='gray')
+    #     plt.imshow(y_pred, cmap='jet', alpha=0.2)
+    #     plt.tight_layout()
         
-        """ Saving the predicted mask along with the image and GT """
-        create_dir(os.path.join('..', 'results', EXPERIMENT))
-        save_image_path = os.path.join('..', 'results', EXPERIMENT, str(i))
-        plt.savefig(save_image_path)
+    #     """ Saving the predicted mask along with the image and GT """
+    #     save_image_path = os.path.join(OUTPUT_FOLDER_PATH, str(i))
+    #     plt.savefig(save_image_path)
         
-#        plt.show()

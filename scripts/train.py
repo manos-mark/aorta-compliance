@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet_lr_0.0001-batch_8-dice_loss-NOT_augmented-multi-centre-shuffle_data"
+EXPERIMENT = "unet-diana-lr_0.0001-batch_8-augmented-pretrained"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     batch_size = 8
-    lr = 1e-3
+    lr = 1e-4
     num_epochs = 200
 
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
-    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=False)
+    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=True)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
     
     """ Model """
