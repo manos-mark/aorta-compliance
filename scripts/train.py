@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana-lr_0.0001-batch_8-augmented-pretrained"
+EXPERIMENT = "res-unet-diana-lr_0.0001-batch_8"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -57,14 +57,14 @@ if __name__ == "__main__":
     print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
-    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=True)
+    train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=False)
     valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
     
     """ Model """
     model = build_unet((H, W, 1))
-    pretrained_model_path = os.path.join('..', 'output', 
-        'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
-    model.load_weights(pretrained_model_path)
+    # pretrained_model_path = os.path.join('..', 'output', 
+    #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
+    # model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, hausdorff, Precision()]
     model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     

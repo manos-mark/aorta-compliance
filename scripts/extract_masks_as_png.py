@@ -10,7 +10,7 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_remove_dublicate') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -78,8 +78,11 @@ if __name__ == '__main__':
                 image_path = os.path.join(image_path, slide_id)
 
                 # Generate ROI's polygon 
-                polygon = generate_polygon(image_path, points_list)
-                
+                try:
+                    polygon = generate_polygon(image_path, points_list)
+                except:
+                    continue
+                            
                 # Remove unnecessary info
                 try:
                     slide_id = slide_id.split(".")[4]

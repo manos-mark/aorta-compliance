@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'att-res-unet-diana-lr_0.001-batch_8-augmented'
+EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":

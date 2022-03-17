@@ -30,7 +30,9 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     resolution, syst_press, diast_press, asc_min, asc_max, asc_compliance, \
         asc_distensibility, desc_min, desc_max, \
         desc_compliance, desc_distensibility = df.loc[patient_id, 'Resolution':]
-        
+    
+    if (not asc_min) or (not asc_max) or (not syst_press) or (not diast_press):
+        return None, None, None, None
     if asc_or_desc == 'asc':
         compliance = compute_compliance(asc_min, asc_max, syst_press, diast_press)
         return compliance, asc_min, asc_max, resolution
@@ -85,20 +87,24 @@ if __name__ == '__main__':
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_remove_dublicate')
     patient_ids = os.listdir(DATASET_FOLDER_PATH)
+    
+    experiment_results_folder_path = os.path.join('..', 'results', EXPERIMENT)
+    create_dir(experiment_results_folder_path)
 
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"), compile=False)    
     
+    results_df = pd.DataFrame()
     predicted_compliances, original_compliances = ([] for i in range(2))
     original_min_areas, predicted_min_areas, original_max_areas, predicted_max_areas = ([] for i in range(4))
     """ Iterate through every patient """
-    for patient_id in patient_ids[4:6]:
+    for patient_id in patient_ids:
         patient_folder_path = os.path.join(DATASET_FOLDER_PATH, patient_id)  
-        patient_output_folder_path = os.path.join('..', 'results', patient_id)
-        masks_output_folder_path = os.path.join('..', 'results', patient_id, 'masks')
+        patient_output_folder_path = os.path.join('..', 'results', EXPERIMENT, patient_id)
+        masks_output_folder_path = os.path.join('..', 'results', EXPERIMENT, patient_id, 'masks')
         create_dir(patient_output_folder_path)
         create_dir(masks_output_folder_path)
     
@@ -110,6 +116,8 @@ if __name__ == '__main__':
         
         """ Fetch compliance from excel file """
         original_compliance, original_min, original_max, resolution = compute_compliance_from_excel(patient_id, excel_path)
+        if (original_compliance is None) or (original_min is None) or (original_max is None):
+            continue
         original_compliances.append(original_compliance)
         
         """ Fetch systolic and distolic pressures from excel file """
@@ -144,12 +152,12 @@ if __name__ == '__main__':
                 aorta = read_mask(os.path.join(masks_output_folder_path, mask_name))
                 aorta = crop_and_pad(aorta[:,:,0], W, H)
                 
-            
             image = crop_and_pad(image[:,:,0], W, H)
             
             axs[i,j].imshow(image, cmap='gray')
             axs[i,j].imshow(aorta, cmap='jet', alpha=0.2)
             axs[i,j].axis('off')
+            
             if j < 4: j+=1
             else: 
                 j=0
@@ -162,8 +170,13 @@ if __name__ == '__main__':
             area = int(area * resolution * resolution)
             area_per_slice.append(area)
             fig.tight_layout()
-#        plt.show()
+            
+
+        """ Save areas and ROIs to files """
+        df = pd.DataFrame(area_per_slice)
+        df.to_excel(os.path.join(patient_output_folder_path, 'areas_per_slice.xlsx'), header=False)
         fig.savefig(os.path.join(patient_output_folder_path, 'predicted_ROIs.jpg' ))
+#        plt.show()
         plt.clf()
         
         """ Plot area over time """
@@ -198,15 +211,45 @@ if __name__ == '__main__':
         """ Compute global ascending compliance """
         predicted_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         predicted_compliances.append(predicted_compliance)
+        
+        
+        """ Compute global ascending distensibility """
             
         print('Original ascending compliance', original_compliance)
         print('Predicted ascending compliance', predicted_compliance)
         
+        """ Save results to file """
+        df = pd.DataFrame([{
+                'patient_id': patient_id,
+                'min_area': original_min, 
+                'max_area': original_max, 
+                'syst_press': syst_press, 
+                'diast_press': diast_press,
+                'min_area_pred': min_area, 
+                'max_area_pred': max_area,
+                'compliance': original_compliance,
+                'compliance_pred': predicted_compliance,
+#                'distensibility': original_distensibility,
+#                'distensibility_pred': predicted_distensibility
+            }])
+        try:
+            results_df = pd.concat([results_df, df], axis=0)
+            results_df.set_index('patient_id')
+        except:
+            print('WARNING!!! Dublicate patient_id: ', patient_id)
         print('\n ========================================================================== \n')
     
-    pyCompare.blandAltman(original_compliances, predicted_compliances)
+    results_df.to_excel(os.path.join(experiment_results_folder_path, 'results.xlsx'))
+    
+    pyCompare.blandAltman(original_compliances, predicted_compliances, 
+            savePath=os.path.join(experiment_results_folder_path, 'ComplianceFigure.svg'), 
+            figureFormat='svg')
     plt.clf()
-    pyCompare.blandAltman(original_min_areas, predicted_min_areas)
+    pyCompare.blandAltman(original_min_areas, predicted_min_areas, 
+            savePath=os.path.join(experiment_results_folder_path, 'MinAreasFigure.svg'), 
+            figureFormat='svg')
     plt.clf()
-    pyCompare.blandAltman(original_max_areas, predicted_max_areas)
+    pyCompare.blandAltman(original_max_areas, predicted_max_areas, 
+            savePath=os.path.join(experiment_results_folder_path,'MaxAreasFigure.svg'), 
+            figureFormat='svg')
     plt.clf()
