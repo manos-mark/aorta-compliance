@@ -32,13 +32,14 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
         desc_compliance, desc_distensibility = df.loc[patient_id, 'Resolution':]
     
     if (not asc_min) or (not asc_max) or (not syst_press) or (not diast_press):
-        return None, None, None, None
+        return None, None, None, None, None
+    
     if asc_or_desc == 'asc':
         compliance = compute_compliance(asc_min, asc_max, syst_press, diast_press)
-        return compliance, asc_min, asc_max, resolution
+        return compliance, asc_min, asc_max, resolution, asc_distensibility
     else:
         compliance = compute_compliance(desc_min, desc_max, syst_press, diast_press)
-        return compliance, desc_min, desc_max, resolution
+        return compliance, desc_min, desc_max, resolution, desc_distensibility
     
 
 def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
@@ -66,6 +67,9 @@ def fetch_diast_press_from_excel(patient_id, excel_path):
 def compute_compliance(min_area, max_area, syst_press, diast_press):
     return np.abs(max_area - min_area) / np.abs(syst_press - diast_press)
 
+def compute_distensibility(compliance, min_area):
+    return (compliance / min_area) * 1000
+
 
 def segment_aorta(model, image, display=False):
     """ Predicting the mask """
@@ -83,7 +87,7 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
+    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
@@ -99,7 +103,9 @@ if __name__ == '__main__':
     
     results_df = pd.DataFrame()
     predicted_compliances, original_compliances = ([] for i in range(2))
+    predicted_distensibilities, original_distensibilities = ([] for i in range(2))
     original_min_areas, predicted_min_areas, original_max_areas, predicted_max_areas = ([] for i in range(4))
+   
     """ Iterate through every patient """
     for patient_id in patient_ids:
         patient_folder_path = os.path.join(DATASET_FOLDER_PATH, patient_id)  
@@ -114,23 +120,22 @@ if __name__ == '__main__':
         """ Loading patient predicted masks """
         masks = glob.glob(f'{masks_output_folder_path}/**/*.png', recursive=True)
         
-        """ Fetch compliance from excel file """
-        original_compliance, original_min, original_max, resolution = compute_compliance_from_excel(patient_id, excel_path)
+        """ Fetch pressure & areas from excel and compute compliance """
+        original_compliance, original_min, original_max, resolution, original_distensibility = compute_compliance_from_excel(patient_id, excel_path)
         if (original_compliance is None) or (original_min is None) or (original_max is None):
             continue
         original_compliances.append(original_compliance)
+        original_distensibilities.append(original_distensibility)
         
         """ Fetch systolic and distolic pressures from excel file """
         syst_press = fetch_syst_press_from_excel(patient_id, excel_path)
         diast_press = fetch_diast_press_from_excel(patient_id, excel_path)
         
         """ Segment the aorta and calculate area for each slice """
+        i = j = 0
         area_per_slice = []
-        
         rows = int(math.ceil(len(image_paths)/5))
         fig, axs = plt.subplots(rows, 5, figsize=(30,30))
-
-        i = j = 0
         for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):  
             mask_name = image_path.split('/')[3] + '_' + image_path.split('/')[5]
             mask_name = mask_name + '_' + str(k) + '.png'
@@ -154,6 +159,7 @@ if __name__ == '__main__':
                 
             image = crop_and_pad(image[:,:,0], W, H)
             
+            # This is just for subploting all the masks in one image
             axs[i,j].imshow(image, cmap='gray')
             axs[i,j].imshow(aorta, cmap='jet', alpha=0.2)
             axs[i,j].axis('off')
@@ -165,9 +171,9 @@ if __name__ == '__main__':
             
             """ Calculate area """
             area = cv2.countNonZero(aorta)
-    
+            
             """ Convert pixel to milimeters """
-            area = int(area * resolution * resolution)
+            area = int(area * resolution * resolution) # TODO is this correct? 
             area_per_slice.append(area)
             fig.tight_layout()
             
@@ -185,39 +191,41 @@ if __name__ == '__main__':
         plt.plot(area_per_slice)
         plt.xlabel('Slices')
         plt.ylabel('Area')
-        plt.ylim(np.min(area_per_slice)-100, np.max(area_per_slice)+100)
+        plt.ylim(np.min(area_per_slice)-(np.min(area_per_slice)/2), np.max(area_per_slice)+(np.max(area_per_slice)/2))
 #        plt.show()
         plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
         plt.clf()
-        
         
         """ Get the minimum and maximum areas across all slices """        
         min_area = min(area_per_slice)
         max_area = max(area_per_slice)
         
+#        """ Get the median of 3 values close to minimum and maximum areas across all slices """
+#        area_per_slice.sort()
+#        min_area = np.median(np.array(area_per_slice[:5]))
+#        max_area = np.median(np.array(area_per_slice[5:]))
+        print('\nPredicted areas STD: ', np.std(area_per_slice))
+        print('Original min, max areas : ', original_min, original_max)
+        print('Predicted min, max areas: ', min_area, max_area)
+
         original_min_areas.append(original_min)
         original_max_areas.append(original_max)
         predicted_min_areas.append(min_area)
         predicted_max_areas.append(max_area)
         
-        print('\nOriginal min, max areas: ', original_min, original_max)
-        print('Predicted min, max areas: ', min_area, max_area)
-        
-        # """ Get the median of 5 values close to minimum and maximum areas across all slices """
-        # area_per_slice.sort()
-        # min_area = np.median(np.array(area_per_slice[:5]))
-        # max_area = np.median(np.array(area_per_slice[5:]))
         
         """ Compute global ascending compliance """
         predicted_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
         predicted_compliances.append(predicted_compliance)
-        
-        
-        """ Compute global ascending distensibility """
-            
-        print('Original ascending compliance', original_compliance)
+        print('Original ascending compliance ', original_compliance)
         print('Predicted ascending compliance', predicted_compliance)
         
+        """ Compute global ascending distensibility """
+        predicted_distensibility = compute_distensibility(predicted_compliance, min_area)
+        predicted_distensibilities.append(predicted_distensibility)
+        print('Original ascending distensibility ', original_distensibility)
+        print('Predicted ascending distensibility', predicted_distensibility)
+            
         """ Save results to file """
         df = pd.DataFrame([{
                 'patient_id': patient_id,
@@ -229,8 +237,8 @@ if __name__ == '__main__':
                 'max_area_pred': max_area,
                 'compliance': original_compliance,
                 'compliance_pred': predicted_compliance,
-#                'distensibility': original_distensibility,
-#                'distensibility_pred': predicted_distensibility
+                'distensibility': original_distensibility,
+                'distensibility_pred': predicted_distensibility
             }])
         try:
             results_df = pd.concat([results_df, df], axis=0)
@@ -245,11 +253,18 @@ if __name__ == '__main__':
             savePath=os.path.join(experiment_results_folder_path, 'ComplianceFigure.svg'), 
             figureFormat='svg')
     plt.clf()
+    
     pyCompare.blandAltman(original_min_areas, predicted_min_areas, 
             savePath=os.path.join(experiment_results_folder_path, 'MinAreasFigure.svg'), 
             figureFormat='svg')
     plt.clf()
+    
     pyCompare.blandAltman(original_max_areas, predicted_max_areas, 
             savePath=os.path.join(experiment_results_folder_path,'MaxAreasFigure.svg'), 
+            figureFormat='svg')
+    plt.clf()
+    
+    pyCompare.blandAltman(original_distensibilities, predicted_distensibilities, 
+            savePath=os.path.join(experiment_results_folder_path,'DistensibilityFigure.svg'), 
             figureFormat='svg')
     plt.clf()
