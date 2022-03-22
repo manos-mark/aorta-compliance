@@ -27,9 +27,13 @@ import os
 def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, index_col=0)
     
-    resolution, syst_press, diast_press, asc_min, asc_max, asc_compliance, \
-        asc_distensibility, desc_min, desc_max, \
-        desc_compliance, desc_distensibility = df.loc[patient_id, 'Resolution':]
+    try:
+        resolution, syst_press, diast_press, asc_min, asc_max, asc_compliance, \
+            asc_distensibility, desc_min, desc_max, \
+            desc_compliance, desc_distensibility = df.loc[patient_id, 'Resolution':]
+    except:
+        print('WARNING: Excel file is not correct')
+        return None, None, None, None, None
     
     if (not asc_min) or (not asc_max) or (not syst_press) or (not diast_press):
         return None, None, None, None, None
@@ -87,11 +91,11 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
+    EXPERIMENT = 'unet-diana-lr_0.001-batch_8_augmented-healthy' # 'unet-diana-lr_0.001-batch_8-augmented'
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_remove_dublicate')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented')
     patient_ids = os.listdir(DATASET_FOLDER_PATH)
     
     experiment_results_folder_path = os.path.join('..', 'results', EXPERIMENT)
