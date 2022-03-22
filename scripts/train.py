@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana-lr_0.001-batch_8_augmented+"
+EXPERIMENT = "unet-diana-lr_0.001-batch_8_augmented-healthy"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
