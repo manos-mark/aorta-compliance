@@ -17,6 +17,7 @@ from skimage.measure import label
 from skimage import img_as_bool
 from tensorflow.keras.utils import CustomObjectScope
 from keras_unet.metrics import dice_coef, iou, dice_loss, hausdorff
+from skimage import exposure
 
 def crop_and_pad(img, cropy, cropx, display=False):
     h, w = img.shape
@@ -61,7 +62,11 @@ def crop_and_pad(img, cropy, cropx, display=False):
     # print('Result: ',result.shape)
     return result
 
-
+def contrast_stretching(image, display=False):
+    # Contrast stretching
+    p2, p98 = np.percentile(image, (2, 98))
+    img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
+    return img_rescale
 # Class to Apply SegNet model
 class SegNet():
     def __init__(self): # Initialize the status bar and place it in the GUI
@@ -108,11 +113,13 @@ def prepare_for_net(np_array): # Preprocessing needed before the Model Inference
    im_tf = np.empty((num_im, 256, 256, 1)) # Create the 3-Channels volume
    for i in range(num_im):
        im_3 = np_array[i,:,:,:]
-       #im = (im-im.min()) / (im.max() - im.min())   # Normalize in the range [0, 1]
+       im_3 = contrast_stretching(im_3)
+       im_3 = crop_and_pad(im_3[:,:,0], 256,256)
+       im_3 = (im_3-im_3.min()) / (im_3.max() - im_3.min())   # Normalize in the range [0, 1]
+       im_3 = im_3.astype(np.float32)
        #im_3 = np.empty((w, h, 3))
        #im_3[:,:,0] = im_3[:,:,1] = im_3[:,:,2] = im
     #    im_3 = resize(im_3, (512,512,3), preserve_range=True) # Resizing
-       im_3 = crop_and_pad(im_3[:,:,0], 256,256)
        im_tf[i,:,:,0] = im_3
    return im_tf
 
