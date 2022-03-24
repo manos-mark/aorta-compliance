@@ -80,7 +80,7 @@ def read_image(path):
     dcm = pydicom.dcmread(path)
     x = dcm.pixel_array
     x = contrast_stretching(x)
-    x = crop_and_pad(x, W, H)
+    x = crop_and_pad(x, H, W)
     # x = bm3d_denoising(x)
     # x = x/np.max(x)
     x = (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -90,7 +90,7 @@ def read_image(path):
 
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = crop_and_pad(x, W, H)
+    x = crop_and_pad(x, H, W)
     # x = x/np.max(x)
     x = (x - np.min(x)) / (np.max(x) - np.min(x))
     x = x > 0.5

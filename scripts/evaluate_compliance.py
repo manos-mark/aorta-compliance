@@ -154,23 +154,24 @@ if __name__ == '__main__':
         for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):  
             mask_name = image_path.split(os.sep)[3] + '_' + str(k) + '.png'
             image = read_image(image_path)
-            W,H = ((dcmread(image_path)).pixel_array).shape
+            H,W = ((dcmread(image_path)).pixel_array).shape
             
             """ Segment aorta if it's not already segmented """
             if len(masks) == 0: # TODO make this len(masks) != len(image_paths)
                                 # now it will give error because we have multiple
                                 # scans for each patient
+                                
                 aorta = segment_aorta(model, image)
-                aorta = crop_and_pad(aorta[:,:,0], W, H)
+                aorta = crop_and_pad(aorta[:,:,0], H,W)
                 img = np.zeros((aorta.shape[0], aorta.shape[1], 3))
                 img[:,:,0] = img[:,:,1] = img[:,:,2] = aorta[:,:]
                 plt.imsave(os.path.join(masks_output_folder_path, mask_name), img, cmap='gray')
             
             else:
                 aorta = read_mask(os.path.join(masks_output_folder_path, mask_name))
-                aorta = crop_and_pad(aorta[:,:,0], W, H)
+                aorta = crop_and_pad(aorta[:,:,0], H,W)
                 
-            image = crop_and_pad(image[:,:,0], W, H)
+            image = crop_and_pad(image[:,:,0], H,W)
             
             # This is just for subploting all the masks in one image
             axs[i,j].imshow(image, cmap='gray')
