@@ -10,8 +10,8 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-#DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                 image_path = image_path.replace('contours' + os.sep, '')
                 image_path = image_path.split(os.sep)[:-2]
                 case_id = image_path[-3]
-                patient_id = image_path[-1]
+                scan_id = image_path[-1]
             
                 image_path = os.sep.join(image_path)
                 image_path = os.path.join(image_path, slide_id)
@@ -93,9 +93,13 @@ if __name__ == '__main__':
                     slide_id = slide_id[-3:]
                     slide_id = "".join(slide_id)
 
+                # Strip leading zeros
+                slide_id = [s.lstrip("0") for s in slide_id]
+                slide_id = "".join(slide_id)
+
                 # Save ROIs and images
-                mask_name = case_id + '_' + patient_id + '_' + slide_id + '_ROI.png'
-                dicom_name = case_id + '_' + patient_id + '_' + slide_id + '.dcm'
+                mask_name = case_id + '_' + slide_id + '.png'
+                dicom_name = case_id + '_' + slide_id + '.dcm'
 
                 plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
                 shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
