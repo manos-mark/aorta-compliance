@@ -28,16 +28,25 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, index_col=0)
     
     try:
-        resolution, syst_press, diast_press, asc_min, asc_max, asc_compliance, \
-            asc_distensibility, desc_min, desc_max, \
-            desc_compliance, desc_distensibility = df.loc[patient_id, 'Resolution':]
+        resolution = df.loc[patient_id, 'Resolution']
+        syst_press = df.loc[patient_id, 'PS']
+        diast_press = df.loc[patient_id, 'PD']
+        asc_min = df.loc[patient_id, 'asc-min']
+        asc_max = df.loc[patient_id, 'asc-max']
+        asc_compliance = df.loc[patient_id, 'asc-compliance']
+        asc_distensibility = df.loc[patient_id, 'asc-distensibility']
+        desc_min = df.loc[patient_id, 'desc-min']
+        desc_max = df.loc[patient_id, 'desc-max']
+        desc_compliance = df.loc[patient_id, 'desc-compliance'] 
+        desc_distensibility = df.loc[patient_id, 'desc-distensibility']
+        print(asc_distensibility)
     except:
         print('WARNING: Excel file is not correct')
         return None, None, None, None, None
     
     if (not asc_min) or (not asc_max) or (not syst_press) or (not diast_press):
         return None, None, None, None, None
-    
+
     if asc_or_desc == 'asc':
         compliance = compute_compliance(asc_min, asc_max, syst_press, diast_press)
         return compliance, asc_min, asc_max, resolution, asc_distensibility
@@ -69,6 +78,8 @@ def fetch_diast_press_from_excel(patient_id, excel_path):
 
         
 def compute_compliance(min_area, max_area, syst_press, diast_press):
+    if (not min_area) or (not max_area) or (not syst_press) or (not diast_press):
+        return 0
     return np.abs(max_area - min_area) / np.abs(syst_press - diast_press)
 
 def compute_distensibility(compliance, min_area):
@@ -91,11 +102,11 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.001-batch_8_augmented-healthy' # 'unet-diana-lr_0.001-batch_8-augmented'
+    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented')
     patient_ids = os.listdir(DATASET_FOLDER_PATH)
     
     experiment_results_folder_path = os.path.join('..', 'results', EXPERIMENT)
@@ -141,9 +152,7 @@ if __name__ == '__main__':
         rows = int(math.ceil(len(image_paths)/5))
         fig, axs = plt.subplots(rows, 5, figsize=(30,30))
         for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):  
-            mask_name = image_path.split('/')[3] + '_' + image_path.split('/')[5]
-            mask_name = mask_name + '_' + str(k) + '.png'
-            
+            mask_name = image_path.split('/')[3] + '_' + str(k) + '.png'
             image = read_image(image_path)
             W,H = ((dcmread(image_path)).pixel_array).shape
             
