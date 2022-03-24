@@ -230,13 +230,13 @@ def resize(image, W=512, H=512, display=False):
     return x
 
 
-def crop_and_pad(img, cropx, cropy, display=False):
+def crop_and_pad(img, cropy, cropx, display=False):
     h, w = img.shape
     starty = startx = 0
     # print('Input: ',img.shape)
     
     # Crop only if the crop size is smaller than image size
-    if cropy <= h:   
+    if cropy <= h :   
         starty = h//2-(cropy//2)    
         
     if cropx <= w:
@@ -251,17 +251,19 @@ def crop_and_pad(img, cropx, cropy, display=False):
     
     if old_image_height < cropy:
         new_image_height = cropy
-    if old_image_width < cropy:
-        new_image_width = cropy
+    if old_image_width < cropx:
+        new_image_width = cropx
     
     if (old_image_height != new_image_height) or (old_image_width != new_image_width):
     
         padded_img = np.full((new_image_height, new_image_width), 0, dtype=np.float32)
     
-        x_center = (new_image_height - old_image_width) // 2
-        y_center = (new_image_width - old_image_height) // 2
+        x_start = (new_image_width - old_image_width) // 2
+        y_start = (new_image_height - old_image_height) // 2
         
-        padded_img[y_center:y_center+old_image_height, x_center:x_center+old_image_width] = cropped_img
+        # x_center = 0 if x_center < 0 else x_center
+        # y_center = 0 if y_center < 0 else y_center
+        padded_img[y_start:y_start+old_image_height, x_start:x_start+old_image_width] = cropped_img
         
         # print('Padded: ',padded_img.shape)
         result = padded_img
@@ -350,21 +352,30 @@ if __name__ == "__main__":
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
     
-    images = [(pydicom.read_file(IMAGES_PATH + os.sep + s)).pixel_array for s in natsorted(os.listdir(IMAGES_PATH))]
+    # images = [(pydicom.read_file(IMAGES_PATH + os.sep + s)).pixel_array for s in natsorted(os.listdir(IMAGES_PATH))]
     # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
     
-    random.shuffle(images)
+    image = (pydicom.read_file(os.path.join(IMAGES_PATH, os.listdir(IMAGES_PATH)[0]))).pixel_array
+    h, w = image.shape
+    print('Original h, w: ',  h, w)
+    cropped = crop_and_pad(image, 256, 256)
+    print('Cropped h, w: ',  cropped.shape[0], cropped.shape[1])
     
-    rand_images = []
-    for j in range(20):
-        rand = random.randint(0, len(images)-1)
-        rand_images.append(images[rand])
+    img = crop_and_pad(cropped, h, w)
+    print('Reversed h, w: ', img.shape[0], img.shape[1])
+#     random.shuffle(images)
+    
+#     rand_images = []
+#     for j in range(20):
+#         rand = random.randint(0, len(images)-1)
+#         rand_images.append(images[rand])
         
-#    rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
-    rand_images = [bm3d_denoising(i) for i in rand_images]
+# #    rand_images = [n4_bias_field_correction(i) for i in rand_images]
+#     rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+    
+    # rand_images = [bm3d_denoising(i) for i in rand_images]
 #    rand_images = [limiting_filter(i) for i in rand_images]
-    rand_images = [contrast_stretching(i) for i in rand_images]
+    # rand_images = [contrast_stretching(i) for i in rand_images]
     # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
 
 #    reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
@@ -375,8 +386,8 @@ if __name__ == "__main__":
 #    rand_images = [standardization(i) for i in rand_images]
     
 
-    train_irs_model(images, 'irs_model.pkl')
-    rand_images = [intensity_range_standardization(i, 'irs_model.pkl', False) for i in rand_images]
+    # train_irs_model(images, 'irs_model.pkl')
+    # rand_images = [intensity_range_standardization(i, 'irs_model.pkl', False) for i in rand_images]
 #    rand_images = [normalize(i) for i in rand_images]
     
     # image_after = images[rand]
