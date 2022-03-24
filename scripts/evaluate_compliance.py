@@ -152,7 +152,7 @@ if __name__ == '__main__':
         rows = int(math.ceil(len(image_paths)/5))
         fig, axs = plt.subplots(rows, 5, figsize=(30,30))
         for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):  
-            mask_name = image_path.split('/')[3] + '_' + str(k) + '.png'
+            mask_name = image_path.split(os.sep)[3] + '_' + str(k) + '.png'
             image = read_image(image_path)
             W,H = ((dcmread(image_path)).pixel_array).shape
             
