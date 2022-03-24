@@ -34,25 +34,7 @@ class MainWindow(tk.Frame):
     
     def init_ui(self):
         self.parent.title("Aortic Segmentation and Compliance Tool")   # Title of the GUI
-        
-        toolbar = ToolbarWidget(self.parent, self)
-        
-        # three frames on top of each other
-        header_frame = tk.Frame(self.parent, borderwidth=2, pady=2)
-        header = HeaderWidget(header_frame, self)
-        
-        center_frame = tk.Frame(self.parent, borderwidth=2, pady=5)
-        bottom_frame = tk.Frame(self.parent, borderwidth=2, pady=5)
-        
-        header_frame.grid(row=0, column=0)
-        center_frame.grid(row=1, column=0)
-        bottom_frame.grid(row=2, column=0)
-                
-        # For .grid Widget management
-        # self.parent.columnconfigure([0,1], weight=3)
-        # self.parent.rowconfigure([0], weight=3)
-        # self.parent.rowconfigure([1], weight=1)
-   
+          
         # Image canvas 
         self.check = tk.IntVar()
         self.quart = tk.IntVar()
@@ -97,6 +79,24 @@ class MainWindow(tk.Frame):
         # To use either 1 or 2 Volumes
         self.vol1load = 0   # 1 when volume is loaded
         self.vol1seg = 0    # 1 when volume is segmented 
+
+        toolbar = ToolbarWidget(self.parent, self)
+        
+        # three frames on top of each other
+        header_frame = tk.Frame(self.parent, borderwidth=2, pady=2)
+        header = HeaderWidget(header_frame, self)
+        
+        # center_frame = tk.Frame(self.parent, borderwidth=2, pady=5)
+        # bottom_frame = tk.Frame(self.parent, borderwidth=2, pady=5)
+        
+        header_frame.grid(row=0, column=0)
+        # center_frame.grid(row=1, column=0)
+        # bottom_frame.grid(row=2, column=0)
+                
+        # For .grid Widget management
+        # self.parent.columnconfigure([0,1], weight=3)
+        # self.parent.rowconfigure([0], weight=3)
+        # self.parent.rowconfigure([1], weight=1)
         
     def left_action(self): # If left key pressed
         move = -1
