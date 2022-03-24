@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'unet-diana-lr_0.001-batch_8_augmented-healthy'
+EXPERIMENT = 'res-unet-diana-binary_crossentropy-lr_0.0001-batch_8-augmented-healthy'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
@@ -92,9 +92,9 @@ if __name__ == "__main__":
         CSVLogger(os.path.join("..", "output", EXPERIMENT, "test.csv"))
     ]
 
-#    h = model.evaluate(test_dataset, batch_size=2, callbacks=callbacks, verbose=1)
+    h = model.evaluate(test_dataset, batch_size=2, callbacks=callbacks, verbose=1)
     
-#    print(h)
+    print(h)
     
     dice_cores = []
     iou_cores = []
@@ -104,8 +104,6 @@ if __name__ == "__main__":
          x = read_image(x)
          y = read_mask(y)
         
-         """ Extracing the image name. """
-         # image_name = test_image.split("/")[-1]
         
          """ Predicting the mask """
         #  y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
@@ -121,7 +119,7 @@ if __name__ == "__main__":
      
     print(model.metrics_names[1], " %.2f%% (+/- %.2f%%)" % (np.mean(dice_cores), np.std(dice_cores)))
     print(model.metrics_names[2], " %.2f%% (+/- %.2f%%)" % (np.mean(iou_cores), np.std(iou_cores)))
-    print(model.metrics_names[3], " %.2f%% (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
+    print(model.metrics_names[3], " %.2f (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
 
 #         fig = plt.figure(figsize=(15,15))
 #         plt.subplot(2,2,1, title='Gound truth mask')
