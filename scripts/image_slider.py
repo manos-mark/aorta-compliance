@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import pydicom
+from preprocessing import crop_and_pad
 
 
 plt.rcParams["figure.figsize"] = [7.50, 3.50]
@@ -13,12 +14,12 @@ plt.rcParams["figure.autolayout"] = True
 def draw_contours(img_mri, true_mask, predicted):
     """
     This function draws both the predicted mask and ground truth mask
-    The green contours are the predicted
+    The red contours are the predicted
     The blue contours are the ground truth
     """
     contours_pred = getContours(predicted)
     contours_true = getContours(true_mask)
-    with_pred = cv2.drawContours(img_mri, contours_pred,-1, (0,255,0), 1)
+    with_pred = cv2.drawContours(img_mri, contours_pred, -1, (0,0,255), 1)
     combined_img = cv2.drawContours(with_pred, contours_true, -1, (255,0,0), 1)
     
     return combined_img
@@ -40,11 +41,14 @@ def main():
     img_path = f"{IMAGES_PATH}/{patient_id}_{1}.dcm"
 
     predicted = cv2.imread(pred_path)
-    img_mri = (pydicom.dcmread(img_path)).pixel_array
-    # img_mri = img_mri.astype(np.float64)
     true_mask = cv2.imread(ground_truth_path)
     
-    new_img = draw_contours(img_mri, true_mask, predicted)
+    img_mri = (pydicom.dcmread(img_path)).pixel_array
+    img_mri = (img_mri - np.min(img_mri)) / (np.max(img_mri) - np.min(img_mri))
+    img = np.zeros((img_mri.shape[0], img_mri.shape[1], 3))
+    img[:,:,0] = img[:,:,1] = img[:,:,2] = img_mri[:,:]
+    
+    new_img = draw_contours(img.astype('float32'), true_mask, predicted)
     new_img = cv2.cvtColor(new_img, cv2.COLOR_BGR2RGB)
 
     axcolor = 'yellow'
@@ -61,11 +65,14 @@ def update(val):
     print(int(val))
 
     predicted = cv2.imread(pred_path)
-    img_mri = (pydicom.dcmread(img_path)).pixel_array
-    # img_mri = img_mri.astype(np.float64)
     true_mask = cv2.imread(ground_truth_path)
 
-    new_img = draw_contours(img_mri, true_mask, predicted)
+    img_mri = (pydicom.dcmread(img_path)).pixel_array
+    # img_mri = (img_mri - np.min(img_mri)) / (np.max(img_mri) - np.min(img_mri))
+    img = np.zeros((img_mri.shape[0], img_mri.shape[1], 3))
+    img[:,:,0] = img[:,:,1] = img[:,:,2] = img_mri[:,:]
+
+    new_img = draw_contours(img.astype('uint8') * 255, true_mask, predicted)
     new_img = cv2.cvtColor(new_img, cv2.COLOR_BGR2RGB)
 
     ax.imshow(new_img)
@@ -77,7 +84,7 @@ if __name__ == '__main__':
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
 
     patient_ids = os.listdir(os.path.join('..', 'dataset', 'diana_segmented'))
-    patient_id = '000000359340'#patient_ids[0]
+    patient_id = '000000013461'#patient_ids[0]
     PRED_PATH = os.path.join('..', 'results', EXPERIMENT, patient_id, 'masks')
 
     fig, ax = plt.subplots()
