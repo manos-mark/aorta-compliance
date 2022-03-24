@@ -1,40 +1,32 @@
+
+import numpy as np
 import tensorflow as tf
-
-from keras_unet import TF
 from tensorflow.keras import backend as K
+from scipy.spatial.distance import directed_hausdorff
+smooth = 1e-15 
+
+def hausdorff(y_true, y_pred):
+    def f(y_true, y_pred, seed=0):
+        y_true = tf.keras.layers.Flatten()(y_true)
+        y_pred = tf.keras.layers.Flatten()(y_pred)
+        return directed_hausdorff(y_true, y_pred, seed)[0]
+    return tf.numpy_function(f, [y_true, y_pred], tf.double)
 
 
-def iou(y_true, y_pred, smooth=1.):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + smooth)
+def iou(y_true, y_pred):
+    def f(y_true, y_pred):
+        intersection = (y_true * y_pred).sum()
+        union = y_true.sum() + y_pred.sum() - intersection
+        x = (intersection + smooth) / (union + smooth)
+        x = x.astype(np.float32)
+        return x
+    return tf.numpy_function(f, [y_true, y_pred], tf.float32)
 
-    
-def jaccard_coef(y_true, y_pred):
-    intersection = K.sum(y_true * y_pred)
-    union = K.sum(y_true + y_pred)
-    jac = (intersection + 1.) / (union - intersection + 1.)
-    return K.mean(jac)
+def dice_coef(y_true, y_pred):
+    y_true = tf.keras.layers.Flatten()(y_true)
+    y_pred = tf.keras.layers.Flatten()(y_pred)
+    intersection = tf.reduce_sum(y_true * y_pred)
+    return (2. * intersection + smooth) / (tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) + smooth)
 
-
-def threshold_binarize(x, threshold=0.5):
-    ge = tf.greater_equal(x, tf.constant(threshold))
-    y = tf.where(ge, x=tf.ones_like(x), y=tf.zeros_like(x))
-    return y
-
-
-def iou_thresholded(y_true, y_pred, threshold=0.5, smooth=1.):
-    y_pred = threshold_binarize(y_pred, threshold)
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) - intersection + smooth)
-
-
-def dice_coef(y_true, y_pred, smooth=1.):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (2. * intersection + smooth) / (
-                K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+def dice_loss(y_true, y_pred):
+    return 1.0 - dice_coef(y_true, y_pred)
