@@ -16,7 +16,7 @@ from keras.preprocessing.image import ImageDataGenerator
 import skimage.transform
 import datetime
 
-from metrics import dice_loss, dice_coef, iou, hausdorff
+from metrics import dice_loss, dice_coef, iou, hausdorff, focal_tversky_loss
 from models.unet_model import build_unet
 from models.res_unet_model import build_res_unet
 from models.attention_unet_model import build_attention_unet
@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana-binary_crossentropy-lr_0.01-batch_8-augmented-healthy"
+EXPERIMENT = "unet-diana-focal_tversky_loss-lr_0.01-batch_8-augmented-healthy"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
     # model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, hausdorff, Precision()]
-    model.compile(loss='binary_crossentropy', optimizer=Adam(lr), metrics=metrics)
+    model.compile(loss=focal_tversky_loss, optimizer=Adam(lr), metrics=metrics)
     
     """ Preview a random image and mask after processing """
     # from itertools import islice, count

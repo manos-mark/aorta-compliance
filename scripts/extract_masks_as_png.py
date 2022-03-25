@@ -10,8 +10,8 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
-# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -49,7 +49,6 @@ if __name__ == '__main__':
     dicoms_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/*.ima', recursive=True))
     masks_path = natsorted(glob.iglob(f'{DATASET_FOLDER_PATH}/**/ComplianceAscending.json', recursive=True))
 
-    print(len(dicoms_path))
     for mask_path in tqdm(masks_path):
         # Open contours file
         with open(mask_path) as json_file:
@@ -85,21 +84,21 @@ if __name__ == '__main__':
                     continue
                             
                 # Remove unnecessary info
-                try:
-                    slide_id = slide_id.split(".")[4]
-                    slide_id = "".join(slide_id)
-                except:
-                    slide_id = slide_id.split(".")[0]
-                    slide_id = slide_id[-3:]
-                    slide_id = "".join(slide_id)
+    #             try:
+    #                 slide_id = slide_id.split(".")[4]
+    #                 slide_id = "".join(slide_id)
+    #             except:
+    #                 slide_id = slide_id.split(".")[0]
+    #                 slide_id = slide_id[-3:]
+    #                 slide_id = "".join(slide_id)
 
-                # Strip leading zeros
-                slide_id = [s.lstrip("0") for s in slide_id]
-                slide_id = "".join(slide_id)
+    #             # Strip leading zeros
+    #             slide_id = [s.lstrip("0") for s in slide_id]
+    #             slide_id = "".join(slide_id)
 
-                # Save ROIs and images
-                mask_name = case_id + '_' + slide_id + '.png'
-                dicom_name = case_id + '_' + slide_id + '.dcm'
+    #             # Save ROIs and images
+    #             mask_name = case_id + '_' + slide_id + '.png'
+    #             dicom_name = case_id + '_' + slide_id + '.dcm'
 
-                plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
-                shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
+    #             plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
+    #             shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')

@@ -352,38 +352,30 @@ if __name__ == "__main__":
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
     
-    # images = [(pydicom.read_file(IMAGES_PATH + os.sep + s)).pixel_array for s in natsorted(os.listdir(IMAGES_PATH))]
-    # masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
+    images = [(pydicom.read_file(IMAGES_PATH + os.sep + s)).pixel_array for s in natsorted(os.listdir(IMAGES_PATH))]
+    masks = [cv2.imread(MASKS_PATH + os.sep + s, cv2.IMREAD_GRAYSCALE) for s in natsorted(os.listdir(MASKS_PATH))]
     
-    image = (pydicom.read_file(os.path.join(IMAGES_PATH, os.listdir(IMAGES_PATH)[0]))).pixel_array
-    h, w = image.shape
-    print('Original h, w: ',  h, w)
-    cropped = crop_and_pad(image, 256, 256)
-    print('Cropped h, w: ',  cropped.shape[0], cropped.shape[1])
+    random.shuffle(images)
     
-    img = crop_and_pad(cropped, h, w)
-    print('Reversed h, w: ', img.shape[0], img.shape[1])
-#     random.shuffle(images)
-    
-#     rand_images = []
-#     for j in range(20):
-#         rand = random.randint(0, len(images)-1)
-#         rand_images.append(images[rand])
+    rand_images = []
+    for j in range(20):
+        rand = random.randint(0, len(images)-1)
+        rand_images.append(images[rand])
         
-# #    rand_images = [n4_bias_field_correction(i) for i in rand_images]
-#     rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+#    rand_images = [n4_bias_field_correction(i) for i in rand_images]
+    # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
     
     # rand_images = [bm3d_denoising(i) for i in rand_images]
-#    rand_images = [limiting_filter(i) for i in rand_images]
+    # rand_images = [limiting_filter(i) for i in rand_images]
     # rand_images = [contrast_stretching(i) for i in rand_images]
-    # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+    rand_images = [equalize_histogram(i, display=True) for i in rand_images]
 
-#    reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
-#    reference_img = crop_and_pad(reference_img, 256, 256)
-#    rand_images = [histogram_matching(i, reference_img) for i in rand_images]
-    
-#    rand_images = [resize(i.pixel_array) for i in rand_images]
-#    rand_images = [standardization(i) for i in rand_images]
+    # reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
+    # reference_img = crop_and_pad(reference_img, 256, 256)
+    # rand_images = [histogram_matching(i, reference_img) for i in rand_images]
+
+    # rand_images = [resize(i.pixel_array) for i in rand_images]
+    # rand_images = [standardization(i) for i in rand_images]
     
 
     # train_irs_model(images, 'irs_model.pkl')

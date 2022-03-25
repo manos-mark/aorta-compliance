@@ -14,7 +14,7 @@ import pydicom
 from preprocessing import crop_and_pad
 import matplotlib.pyplot as plt
 import pandas as pd
-from metrics import dice_loss, dice_coef, iou, hausdorff
+from metrics import dice_loss, dice_coef, iou, hausdorff, focal_tversky_loss
 from train import load_data, create_dir, tf_dataset, read_image, read_mask
 from utils import create_dir
 
@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'unet-diana-dice-lr_0.01-batch_8-augmented_affine-healthy'
+EXPERIMENT = 'unet-diana-focal_tversky_loss-lr_0.01-batch_8-augmented-healthy'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     
 
     """ Loading model """
-    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
+    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'focal_tversky_loss': focal_tversky_loss, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
     callbacks = [

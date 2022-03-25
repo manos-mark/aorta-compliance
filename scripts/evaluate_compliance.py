@@ -26,7 +26,7 @@ import os
 
 def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, index_col=0)
-    
+    df = df.fillna(0)
     try:
         resolution = df.loc[patient_id, 'Resolution']
         syst_press = df.loc[patient_id, 'PS']
@@ -57,7 +57,7 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
 
 def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
     df = pd.read_excel(excel_path, index_col=0)
-            
+    df = df.fillna(0)       
     compliance = None
     if asc_or_desc == 'asc':
         compliance = df.loc[patient_id, 'asc-compliance']
@@ -69,11 +69,13 @@ def fetch_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
 
 def fetch_syst_press_from_excel(patient_id, excel_path):
     df = pd.read_excel(excel_path, index_col=0)
+    df = df.fillna(0)
     return df.loc[patient_id, 'PS']
 
 
 def fetch_diast_press_from_excel(patient_id, excel_path):
     df = pd.read_excel(excel_path, index_col=0)
+    df = df.fillna(0)
     return df.loc[patient_id, 'PD']
 
         
@@ -205,7 +207,7 @@ if __name__ == '__main__':
         plt.plot(area_per_slice)
         plt.xlabel('Slices')
         plt.ylabel('Area')
-        plt.ylim(np.min(area_per_slice)-(np.min(area_per_slice)/2), np.max(area_per_slice)+(np.max(area_per_slice)/2))
+        plt.ylim(np.min(area_per_slice)-200, np.max(area_per_slice)+200)
 #        plt.show()
         plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
         plt.clf()
