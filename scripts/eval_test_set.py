@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'res-unet-diana-binary_crossentropy-lr_0.0001-batch_8-augmented-healthy'
+EXPERIMENT = 'unet-diana-dice-lr_0.01-batch_8-augmented_affine-healthy'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":

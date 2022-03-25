@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana-lr_0.001-batch_8_augmented-healthy"
+EXPERIMENT = "unet-diana-binary_crossentropy-lr_0.01-batch_8-augmented-healthy"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     batch_size = 8
-    lr = 1e-3
+    lr = 1e-2
     num_epochs = 200
 
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
     # model.load_weights(pretrained_model_path)
     metrics = [dice_coef, iou, hausdorff, Precision()]
-    model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
+    model.compile(loss='binary_crossentropy', optimizer=Adam(lr), metrics=metrics)
     
     """ Preview a random image and mask after processing """
     # from itertools import islice, count
