@@ -82,23 +82,22 @@ if __name__ == '__main__':
                     polygon = generate_polygon(image_path, points_list)
                 except:
                     continue
-                            
+
                 # Remove unnecessary info
-    #             try:
-    #                 slide_id = slide_id.split(".")[4]
-    #                 slide_id = "".join(slide_id)
-    #             except:
-    #                 slide_id = slide_id.split(".")[0]
-    #                 slide_id = slide_id[-3:]
-    #                 slide_id = "".join(slide_id)
+                try:
+                    slide_id = slide_id.split(".")[4]
+                    slide_id = "".join(slide_id)
+                except:
+                    slide_id = slide_id.split(".")[0]
+                    slide_id = slide_id[-3:]
+                    slide_id = "".join(slide_id)
 
-    #             # Strip leading zeros
-    #             slide_id = [s.lstrip("0") for s in slide_id]
-    #             slide_id = "".join(slide_id)
+                # Strip leading zeros
+                slide_id = slide_id.lstrip("0")
 
-    #             # Save ROIs and images
-    #             mask_name = case_id + '_' + slide_id + '.png'
-    #             dicom_name = case_id + '_' + slide_id + '.dcm'
+                # Save ROIs and images
+                mask_name = case_id + '_' + slide_id + '.png'
+                dicom_name = case_id + '_' + slide_id + '.dcm'
 
-    #             plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
-    #             shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
+                plt.imsave(f'{os.path.join(MASKS_PATH, mask_name)}', polygon, cmap='gray')
+                shutil.copyfile(f'{image_path}', f'{os.path.join(DICOMS_PATH, dicom_name)}')
