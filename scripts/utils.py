@@ -29,18 +29,46 @@ def train_val_test_split(images, masks, split):
     splitted_ids = np.split(image_names, [split_size, 2*split_size])
     
     """ Get training dataset """
-    images_train = [i for i in images if i[18:].split('_')[0] in splitted_ids[2]]
-    masks_train = [i for i in masks if i[17:].split('_')[0] in splitted_ids[2]]
+    images_train = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[2]])
+    masks_train = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[2]])
     
     """ Get validation dataset """
     images_valid = [i for i in images if i[18:].split('_')[0] in splitted_ids[1]]
     masks_valid = [i for i in masks if i[17:].split('_')[0] in splitted_ids[1]]
     
     """ Get test dataset """
-    images_test = [i for i in images if i[18:].split('_')[0] in splitted_ids[0]]
-    masks_test = [i for i in masks if i[17:].split('_')[0] in splitted_ids[0]]
+    images_test = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[0]])
+    masks_test = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[0]])
 
     return (images_train, masks_train), (images_valid, masks_valid), (images_test, masks_test)
+
+
+def train_test_split(images, masks, split):
+    
+    image_names = [i.split(os.sep)[-1] for i in images]
+    image_names = np.unique([i.split('_')[0] for i in image_names])
+
+    np.random.seed(0)
+    np.random.shuffle(image_names)
+
+    split_size = int(len(image_names) * split)
+    # splitted_ids = np.split(image_names, [split_size, 2*split_size])
+    splitted_ids = np.split(image_names, [split_size])
+    
+    """ Get training dataset """
+    images_train = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[1]])
+    masks_train = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[1]])
+    
+    """ Get validation dataset """
+    # images_valid = [i for i in images if i[18:].split('_')[0] in splitted_ids[1]]
+    # masks_valid = [i for i in masks if i[17:].split('_')[0] in splitted_ids[1]]
+    
+    """ Get test dataset """
+    images_test = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[0]])
+    masks_test = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[0]])
+
+    # return (images_train, masks_train), (images_valid, masks_valid), (images_test, masks_test)
+    return (images_train, masks_train), (images_test, masks_test)
 
 def create_dir(path):
     """ Create a directory. """
