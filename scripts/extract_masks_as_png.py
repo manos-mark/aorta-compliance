@@ -10,8 +10,8 @@ from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
 
-# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 

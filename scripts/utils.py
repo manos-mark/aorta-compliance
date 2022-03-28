@@ -8,8 +8,8 @@ import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
 from albumentations import (
-    Compose, RandomBrightnessContrast, JpegCompression, HueSaturationValue, RandomContrast, HorizontalFlip,
-    Rotate, Affine
+    Compose, RandomBrightnessContrast, HorizontalFlip,
+    Rotate, Affine, VerticalFlip
 )
 from functools import partial
 
@@ -53,7 +53,9 @@ def data_augmentation(image, mask, img_size):
             Rotate(limit=20),
             RandomBrightnessContrast(),
             HorizontalFlip(),
-            # Affine(scale=0.25, translate_percent=0.25, shear=0)
+            VerticalFlip(),
+            Affine(scale=(0.9, 1.2)),
+
         ])
         data = {"image":image, "mask":mask}
         aug_data = transforms(**data)

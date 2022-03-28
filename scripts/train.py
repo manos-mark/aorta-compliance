@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana-focal_tversky_loss-lr_0.01-batch_8-augmented-healthy"
+EXPERIMENT = "unet-diana_healthy-lr_0.0001-batch_8-augmented++"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     """ Hyperparameters """
     batch_size = 8
-    lr = 1e-2
+    lr = 1e-4
     num_epochs = 200
 
     model_path = os.path.join("..", "output", EXPERIMENT, "model.h5")
@@ -65,35 +65,14 @@ if __name__ == "__main__":
     # pretrained_model_path = os.path.join('..', 'output', 
     #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
     # model.load_weights(pretrained_model_path)
-    metrics = [dice_coef, iou, hausdorff, Precision()]
-    model.compile(loss=focal_tversky_loss, optimizer=Adam(lr), metrics=metrics)
-    
-    """ Preview a random image and mask after processing """
-    # from itertools import islice, count
-    # import matplotlib.pyplot as plt
-    # import random 
-    # rand = random.randint(0, len(train_dataset))
-    # train_image_iter, train_mask_iter = next(islice(train_dataset, rand, None))
-    # for i in range(0, 1):
-    #     image = train_image_iter[i]
-    #     mask = train_mask_iter[i]
-    #     plt.subplot(1,3,1)
-    #     plt.imshow(image, cmap='gray')
-    #     plt.subplot(1,3,2)
-    #     plt.imshow(mask, cmap='gray')
-    #     plt.show()
+    # for l1 in model.layers[:14]:
+    #     l1.trainable = False
 
+    metrics = [dice_coef, iou, hausdorff, Precision()]
+    model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
     model.summary()
     
-    start = datetime.datetime.now()
-    log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', start.strftime("%Y%m%d-%H%M%S"))
-
-    telegram_callback = TelegramCallback('5175590478:AAHP5_dnqpimmBt83-Z5EF2KSV3k1cqcElo',
-                                        '1939791669',
-                                        'CNN Model',
-                                        # ['loss', 'val_loss'],
-                                        False)
-
+    log_dir = os.path.join('..', 'logs', EXPERIMENT, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
     callbacks = [
         TensorBoard(log_dir=log_dir, histogram_freq=1),
         ModelCheckpoint(model_path, verbose=1, save_best_only=True),
@@ -109,3 +88,17 @@ if __name__ == "__main__":
         callbacks=callbacks
     )
     
+    """ Preview a random image and mask after processing """
+    # from itertools import islice, count
+    # import matplotlib.pyplot as plt
+    # import random 
+    # rand = random.randint(0, len(train_dataset))
+    # train_image_iter, train_mask_iter = next(islice(train_dataset, rand, None))
+    # for i in range(0, 1):
+    #     image = train_image_iter[i]
+    #     mask = train_mask_iter[i]
+    #     plt.subplot(1,3,1)
+    #     plt.imshow(image, cmap='gray')
+    #     plt.subplot(1,3,2)
+    #     plt.imshow(mask, cmap='gray')
+    #     plt.show()

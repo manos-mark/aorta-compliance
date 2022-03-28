@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'unet-diana-focal_tversky_loss-lr_0.01-batch_8-augmented-healthy'
+EXPERIMENT = 'deeper_unet-diana-lr_0.001-batch_8-augmented-healthy'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     
 
     """ Loading model """
-    with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'focal_tversky_loss': focal_tversky_loss, 'hausdorff': hausdorff}):
+    with CustomObjectScope({'iou': iou, 'dice_loss': dice_loss, 'dice_coef': dice_coef, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
     
     callbacks = [
