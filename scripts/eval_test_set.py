@@ -75,7 +75,8 @@ if __name__ == "__main__":
     """ Dataset """
     dataset_path = os.path.join('..', 'dataset')
     
-    (_, _), (_, _), (test_x, test_y) = load_data(dataset_path, split=0.2)
+    # (_, _), (_, _), (test_x, test_y) = load_data(dataset_path, split=0.2)
+    (_, _), (test_x, test_y) = load_data(dataset_path, split=0.2)
     
 #    print(f"Train: {len(train_x)} - {len(train_y)}")
 #    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
@@ -83,10 +84,14 @@ if __name__ == "__main__":
     
     test_dataset = tf_dataset(test_x, test_y, batch=1, augment=False)
     
-
+    from tensorflow.keras.optimizers import Adam
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_loss': dice_loss, 'dice_coef': dice_coef, 'hausdorff': hausdorff}):
-        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
+        # model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
+        model = tf.keras.models.load_model('gan-unet.h5', compile=False)
+    
+    metrics = [dice_coef, iou, hausdorff]
+    model.compile(loss=dice_loss, optimizer=Adam(0.0001), metrics=metrics)
     
     callbacks = [
         CSVLogger(os.path.join("..", "output", EXPERIMENT, "test.csv"))
@@ -96,30 +101,30 @@ if __name__ == "__main__":
     
     print(h)
     
-    dice_cores = []
-    iou_cores = []
-    hd_scores = []
-    for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
-         H, W = ((pydicom.dcmread(x)).pixel_array).shape
-         x = read_image(x)
-         y = read_mask(y)
+    # dice_cores = []
+    # iou_cores = []
+    # hd_scores = []
+    # for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
+    #      H, W = ((pydicom.dcmread(x)).pixel_array).shape
+    #      x = read_image(x)
+    #      y = read_mask(y)
         
         
-         """ Predicting the mask """
-        #  y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
-        #  y_pred = y_pred.astype(np.float32)
-         # y_pred = crop_and_pad(y_pred[:,:,0], W, H)
-         # x = crop_and_pad(x[:,:,0], W, H)
+    #      """ Predicting the mask """
+    #     #  y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
+    #     #  y_pred = y_pred.astype(np.float32)
+    #      # y_pred = crop_and_pad(y_pred[:,:,0], W, H)
+    #      # x = crop_and_pad(x[:,:,0], W, H)
          
-         scores = model.evaluate(np.expand_dims(x, axis=0),np.expand_dims(y, axis=0), verbose=0)
-        #  print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
-         dice_cores.append(scores[1] * 100)
-         iou_cores.append(scores[2] * 100)
-         hd_scores.append(scores[3])
+    #      scores = model.evaluate(np.expand_dims(x, axis=0),np.expand_dims(y, axis=0), verbose=0)
+    #     #  print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+    #      dice_cores.append(scores[1] * 100)
+    #      iou_cores.append(scores[2] * 100)
+    #      hd_scores.append(scores[3])
      
-    print(model.metrics_names[1], " %.2f%% (+/- %.2f%%)" % (np.mean(dice_cores), np.std(dice_cores)))
-    print(model.metrics_names[2], " %.2f%% (+/- %.2f%%)" % (np.mean(iou_cores), np.std(iou_cores)))
-    print(model.metrics_names[3], " %.2f (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
+    # print(model.metrics_names[1], " %.2f%% (+/- %.2f%%)" % (np.mean(dice_cores), np.std(dice_cores)))
+    # print(model.metrics_names[2], " %.2f%% (+/- %.2f%%)" % (np.mean(iou_cores), np.std(iou_cores)))
+    # print(model.metrics_names[3], " %.2f (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
 
 #         fig = plt.figure(figsize=(15,15))
 #         plt.subplot(2,2,1, title='Gound truth mask')

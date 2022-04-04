@@ -104,7 +104,7 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
+    EXPERIMENT = 'gan-unet' #'unet-diana-lr_0.0001-batch_8-augmented'
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
@@ -116,8 +116,9 @@ if __name__ == '__main__':
 
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
-        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"), compile=False)    
-    
+        # model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"), compile=False)    
+        model = tf.keras.models.load_model('gan-unet.h5', compile=False)
+
     results_df = pd.DataFrame()
     predicted_compliances, original_compliances = ([] for i in range(2))
     predicted_distensibilities, original_distensibilities = ([] for i in range(2))
