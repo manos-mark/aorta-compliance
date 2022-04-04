@@ -7,6 +7,7 @@ from preprocessing import contrast_stretching, crop_and_pad, bm3d_denoising
 import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
+import nibabel as nib
 from albumentations import (
     Compose, RandomBrightnessContrast, HorizontalFlip,
     Rotate, Affine, VerticalFlip
@@ -100,20 +101,27 @@ def data_augmentation(image, mask, img_size):
 
 def load_data(path, split=0.2):
     images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    if len(images) == 0:
+        images = natsorted(glob(os.path.join(path, "images", "*.nii.gz")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
     return train_val_test_split(images, masks, split)
 
 def read_image(path):
-    dcm = pydicom.dcmread(path)
-    x = dcm.pixel_array
+    # dcm = pydicom.dcmread(path)
+    # x = dcm.pixel_array
+    x = nib.load(path)
+    x = x.get_data()
     x = contrast_stretching(x)
-    x = crop_and_pad(x, H, W)
+    
+    new_x = np.zeros((H,W,3))
+    for i in range(x.shape[2]):
+        new_x[:,:,i] = crop_and_pad(x[:,:,i], H, W)
     # x = bm3d_denoising(x)
     # x = x/np.max(x)
-    x = (x - np.min(x)) / (np.max(x) - np.min(x))
-    x = x.astype(np.float32)
-    x = np.expand_dims(x, axis=-1)
-    return x
+    new_x = (new_x - np.min(new_x)) / (np.max(new_x) - np.min(new_x))
+    new_x = new_x.astype(np.float32)
+    # new_x = np.expand_dims(new_x, axis=-1)
+    return new_x
 
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
@@ -135,7 +143,7 @@ def tf_parse(x, y):
         return x, y
 
     x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
-    x.set_shape([H, W, 1])
+    x.set_shape([H, W, 3])
     y.set_shape([H, W, 1])
     
     return x, y
