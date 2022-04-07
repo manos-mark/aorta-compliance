@@ -53,22 +53,16 @@ def train_test_split(images, masks, split):
     np.random.shuffle(image_names)
 
     split_size = int(len(image_names) * split)
-    # splitted_ids = np.split(image_names, [split_size, 2*split_size])
     splitted_ids = np.split(image_names, [split_size])
     
     """ Get training dataset """
     images_train = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[1]])
     masks_train = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[1]])
     
-    """ Get validation dataset """
-    # images_valid = [i for i in images if i[18:].split('_')[0] in splitted_ids[1]]
-    # masks_valid = [i for i in masks if i[17:].split('_')[0] in splitted_ids[1]]
-    
     """ Get test dataset """
     images_test = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[0]])
     masks_test = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[0]])
 
-    # return (images_train, masks_train), (images_valid, masks_valid), (images_test, masks_test)
     return (images_train, masks_train), (images_test, masks_test)
 
 def create_dir(path):
@@ -104,24 +98,30 @@ def load_data(path, split=0.2):
     if len(images) == 0:
         images = natsorted(glob(os.path.join(path, "images", "*.nii.gz")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
-    return train_val_test_split(images, masks, split)
+    return train_test_split(images, masks, split)
 
 def read_image(path):
-    # dcm = pydicom.dcmread(path)
-    # x = dcm.pixel_array
-    x = nib.load(path)
-    x = x.get_data()
+    dcm = pydicom.dcmread(path)
+    x = dcm.pixel_array
     x = contrast_stretching(x)
+    x = crop_and_pad(x, H, W)
+    x = (x - np.min(x)) / (np.max(x) - np.min(x))
+    x = x.astype(np.float32)
+    x = np.expand_dims(x, axis=-1)
+
+    # 2.5D architecture 
+    # x = nib.load(path)
+    # x = x.get_data()
+    # x = contrast_stretching(x)
+    # x = crop_and_pad(x, H, W)
+    # new_x = np.zeros((H,W,3))
+    # for i in range(x.shape[2]):
+    #     new_x[:,:,i] = crop_and_pad(x[:,:,i], H, W)
+    # new_x = (new_x - np.min(new_x)) / (np.max(new_x) - np.min(new_x))
+    # new_x = new_x.astype(np.float32)
+
     
-    new_x = np.zeros((H,W,3))
-    for i in range(x.shape[2]):
-        new_x[:,:,i] = crop_and_pad(x[:,:,i], H, W)
-    # x = bm3d_denoising(x)
-    # x = x/np.max(x)
-    new_x = (new_x - np.min(new_x)) / (np.max(new_x) - np.min(new_x))
-    new_x = new_x.astype(np.float32)
-    # new_x = np.expand_dims(new_x, axis=-1)
-    return new_x
+    return x
 
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
@@ -143,7 +143,7 @@ def tf_parse(x, y):
         return x, y
 
     x, y = tf.numpy_function(_parse, [x, y], [tf.float32, tf.float32])
-    x.set_shape([H, W, 3])
+    x.set_shape([H, W, 1])
     y.set_shape([H, W, 1])
     
     return x, y

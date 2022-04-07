@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'deeper_unet-diana-lr_0.001-batch_8-augmented-healthy'
+EXPERIMENT = 'unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-KField/1'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
@@ -87,60 +87,60 @@ if __name__ == "__main__":
     from tensorflow.keras.optimizers import Adam
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_loss': dice_loss, 'dice_coef': dice_coef, 'hausdorff': hausdorff}):
-        # model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
-        model = tf.keras.models.load_model('gan-unet.h5', compile=False)
+        model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"))
+        # model = tf.keras.models.load_model('gan-unet.h5', compile=False)
     
-    metrics = [dice_coef, iou, hausdorff]
-    model.compile(loss=dice_loss, optimizer=Adam(0.0001), metrics=metrics)
+    # metrics = [dice_coef, iou, hausdorff]
+    # model.compile(loss=dice_loss, optimizer=Adam(0.0001), metrics=metrics)
     
     callbacks = [
         CSVLogger(os.path.join("..", "output", EXPERIMENT, "test.csv"))
     ]
 
     h = model.evaluate(test_dataset, batch_size=2, callbacks=callbacks, verbose=1)
-    
     print(h)
     
-    # dice_cores = []
-    # iou_cores = []
-    # hd_scores = []
-    # for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
-    #      H, W = ((pydicom.dcmread(x)).pixel_array).shape
-    #      x = read_image(x)
-    #      y = read_mask(y)
-        
-        
-    #      """ Predicting the mask """
-    #     #  y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
-    #     #  y_pred = y_pred.astype(np.float32)
-    #      # y_pred = crop_and_pad(y_pred[:,:,0], W, H)
-    #      # x = crop_and_pad(x[:,:,0], W, H)
-         
-    #      scores = model.evaluate(np.expand_dims(x, axis=0),np.expand_dims(y, axis=0), verbose=0)
-    #     #  print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
-    #      dice_cores.append(scores[1] * 100)
-    #      iou_cores.append(scores[2] * 100)
-    #      hd_scores.append(scores[3])
-     
-    # print(model.metrics_names[1], " %.2f%% (+/- %.2f%%)" % (np.mean(dice_cores), np.std(dice_cores)))
-    # print(model.metrics_names[2], " %.2f%% (+/- %.2f%%)" % (np.mean(iou_cores), np.std(iou_cores)))
-    # print(model.metrics_names[3], " %.2f (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
+    dice_cores = []
+    iou_cores = []
+    hd_scores = []
+    for i, (x,y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
+        H, W = ((pydicom.dcmread(x)).pixel_array).shape
+        x = read_image(x)
+        y = read_mask(y)
+    
+        """ Predicting the mask """
+        # y_pred = model.predict(np.expand_dims(x, axis=0))[0] > 0.5
+        # y_pred = y_pred.astype(np.float32)
+        # y_pred = crop_and_pad(y_pred[:,:,0], W, H)
+        # # x = crop_and_pad(x[:,:,0], W, H)
 
-#         fig = plt.figure(figsize=(15,15))
-#         plt.subplot(2,2,1, title='Gound truth mask')
-#         plt.imshow(y, cmap='gray')
-#         plt.subplot(2,2,2, title='Image and ground truth mask')
-#         plt.imshow(x, cmap='gray')
-#         plt.imshow(y, cmap='jet', alpha=0.2)
-#         
-#         plt.subplot(2,2,3, title='Predicted mask')
-#         plt.imshow(y_pred, cmap='gray')
-#         plt.subplot(2,2,4, title='Image and predicted mask')
-#         plt.imshow(x, cmap='gray')
-#         plt.imshow(y_pred, cmap='jet', alpha=0.2)
-#         plt.tight_layout()
+        # fig = plt.figure(figsize=(15,15))
+        # plt.subplot(2,2,1, title='Gound truth mask')
+        # plt.imshow(y, cmap='gray')
+        # plt.subplot(2,2,2, title='Image and ground truth mask')
+        # plt.imshow(crop_and_pad(x[:,:,0], W, H), cmap='gray')
+        # plt.imshow(y, cmap='jet', alpha=0.2)
         
-    #     """ Saving the predicted mask along with the image and GT """
-    #     save_image_path = os.path.join(OUTPUT_FOLDER_PATH, str(i))
-    #     plt.savefig(save_image_path)
+        # plt.subplot(2,2,3, title='Predicted mask')
+        # plt.imshow(y_pred, cmap='gray')
+        # plt.subplot(2,2,4, title='Image and predicted mask')
+        # plt.imshow(crop_and_pad(x[:,:,0], W, H), cmap='gray')
+        # plt.imshow(y_pred, cmap='jet', alpha=0.2)
+        # plt.tight_layout()
+        
+        # """ Saving the predicted mask along with the image and GT """
+        # save_image_path = os.path.join(OUTPUT_FOLDER_PATH, str(i))
+        # plt.savefig(save_image_path)
+         
+        scores = model.evaluate(np.expand_dims(x, axis=0), np.expand_dims(y, axis=0), verbose=0)
+    #  print("%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+        dice_cores.append(scores[1] * 100)
+        iou_cores.append(scores[2] * 100)
+        hd_scores.append(scores[3])
+     
+    print(model.metrics_names[1], " %.2f%% (+/- %.2f%%)" % (np.mean(dice_cores), np.std(dice_cores)))
+    print(model.metrics_names[2], " %.2f%% (+/- %.2f%%)" % (np.mean(iou_cores), np.std(iou_cores)))
+    print(model.metrics_names[3], " %.2f (+/- %.2f)" % (np.mean(hd_scores), np.std(hd_scores)))
+
+        
         

@@ -27,7 +27,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana_healthy-lr_0.001-batch_8-augmented-KField"
+EXPERIMENT = "res_unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-KField"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     dataset_path = os.path.join('..', 'dataset')
     
     # (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path)
-    (train_x, train_y), (test_x, test_y) = load_data(dataset_path)
+    (train_x, train_y), (test_x, test_y) = load_data(dataset_path, split=0.2)
     
     print(f"Train: {len(train_x)} - {len(train_y)}")
     # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
@@ -61,14 +61,14 @@ if __name__ == "__main__":
         valid_dataset = tf_dataset(train_x[val], train_y[val], batch=batch_size, augment=False)
     
         """ Model """
-        model = build_unet((H, W, 1))
+        model = build_res_unet((H, W, 1))
         # pretrained_model_path = os.path.join('..', 'output', 
         #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
         # model.load_weights(pretrained_model_path)
         # for l1 in model.layers[:14]:
         #     l1.trainable = False
 
-        metrics = [dice_coef, iou, hausdorff, Precision()]
+        metrics = [dice_coef, iou, hausdorff, Precision(), Recall()]
         model.compile(loss=dice_loss, optimizer=Adam(lr), metrics=metrics)
         model.summary()
         
