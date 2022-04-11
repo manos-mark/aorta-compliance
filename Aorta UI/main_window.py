@@ -65,7 +65,6 @@ class MainWindow(Frame):
         self.slice_cnt = None
         self.prev_btn = None
         self.next_btn = None
-        self.right_click_menu = None # Object to enable actions using the right click
         self.volume = []   # To store both volumes
         self.filename = ''     # To store file names for optional saving
         self.init_ui()
@@ -83,7 +82,7 @@ class MainWindow(Frame):
         self.show_contours_status = BooleanVar()
         self.split_quarters_status = BooleanVar()
         self.convex_hull_status = BooleanVar()
-        self.apply_cog_status = BooleanVar()
+        self.correct_cog_status = BooleanVar()
         self.compliance = np.zeros(shape=(5,))
         self.systolic_pressure = StringVar(value='130')
         self.diastolic_pressure = StringVar(value='80')
@@ -124,7 +123,7 @@ class MainWindow(Frame):
         self.diastolic_pressure_entry = Entry(self.parent, textvariable=self.diastolic_pressure, width=2)
         
     def compute_compliance_action(self):  # Function called when Calculate EF BT is pressed
-        figure = plt.Figure(figsize=(8,8))
+        figure = plt.Figure(figsize=(7,7))
         if not self.split_quarters_status.get():
             plot = figure.add_subplot(111)
             plot.plot(self.imager.area, color="blue")
@@ -197,17 +196,17 @@ class MainWindow(Frame):
         self.convex_hull_checkbtn =  Checkbutton(self.parent, text="Apply Convex Hull", variable=self.convex_hull_status, command=self.convex_hull_action)
         self.convex_hull_checkbtn.grid(row=1, column=0, sticky="s", pady=50, padx=50)
         
-        self.cog_checkbtn =  Checkbutton(self.parent, text="Correct c.o.g.", variable=self.apply_cog_status, command=self.cog_action)
+        self.cog_checkbtn =  Checkbutton(self.parent, text="Correct c.o.g.", variable=self.correct_cog_status, command=self.cog_action)
         self.cog_checkbtn.grid(row=1, column=0, sticky="s", pady=25, padx=50)
 
     def cog_action(self): # Checker tickbox
         copy_seg = copy.deepcopy(self.vol_seg)
-        self.imager.segmentation(copy_seg, convex_hull=self.convex_hull_status.get(), cog=self.apply_cog_status.get())
+        self.imager.segmentation(copy_seg, convex_hull=self.convex_hull_status.get(), cog=self.correct_cog_status.get())
         self.show_image(self.imager.get_current_image())
         
     def convex_hull_action(self):
         copy_seg = copy.deepcopy(self.vol_seg)
-        self.imager.segmentation(copy_seg, convex_hull=self.convex_hull_status.get())
+        self.imager.segmentation(copy_seg, convex_hull=self.convex_hull_status.get(), cog=self.correct_cog_status.get())
         self.show_image(self.imager.get_current_image())
 
     def delete_selected(self):
