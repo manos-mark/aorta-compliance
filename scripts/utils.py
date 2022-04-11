@@ -7,6 +7,7 @@ from preprocessing import contrast_stretching, crop_and_pad, bm3d_denoising
 import tensorflow as tf
 import cv2
 import matplotlib.pyplot as plt
+import nibabel as nib
 from albumentations import (
     Compose, RandomBrightnessContrast, HorizontalFlip,
     Rotate, Affine, VerticalFlip
@@ -29,18 +30,40 @@ def train_val_test_split(images, masks, split):
     splitted_ids = np.split(image_names, [split_size, 2*split_size])
     
     """ Get training dataset """
-    images_train = [i for i in images if i[18:].split('_')[0] in splitted_ids[2]]
-    masks_train = [i for i in masks if i[17:].split('_')[0] in splitted_ids[2]]
+    images_train = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[2]])
+    masks_train = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[2]])
     
     """ Get validation dataset """
     images_valid = [i for i in images if i[18:].split('_')[0] in splitted_ids[1]]
     masks_valid = [i for i in masks if i[17:].split('_')[0] in splitted_ids[1]]
     
     """ Get test dataset """
-    images_test = [i for i in images if i[18:].split('_')[0] in splitted_ids[0]]
-    masks_test = [i for i in masks if i[17:].split('_')[0] in splitted_ids[0]]
+    images_test = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[0]])
+    masks_test = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[0]])
 
     return (images_train, masks_train), (images_valid, masks_valid), (images_test, masks_test)
+
+
+def train_test_split(images, masks, split):
+    
+    image_names = [i.split(os.sep)[-1] for i in images]
+    image_names = np.unique([i.split('_')[0] for i in image_names])
+
+    np.random.seed(0)
+    np.random.shuffle(image_names)
+
+    split_size = int(len(image_names) * split)
+    splitted_ids = np.split(image_names, [split_size])
+    
+    """ Get training dataset """
+    images_train = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[1]])
+    masks_train = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[1]])
+    
+    """ Get test dataset """
+    images_test = np.array([i for i in images if i[18:].split('_')[0] in splitted_ids[0]])
+    masks_test = np.array([i for i in masks if i[17:].split('_')[0] in splitted_ids[0]])
+
+    return (images_train, masks_train), (images_test, masks_test)
 
 def create_dir(path):
     """ Create a directory. """
@@ -72,19 +95,32 @@ def data_augmentation(image, mask, img_size):
 
 def load_data(path, split=0.2):
     images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    if len(images) == 0:
+        images = natsorted(glob(os.path.join(path, "images", "*.nii.gz")))
     masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
-    return train_val_test_split(images, masks, split)
+    return train_test_split(images, masks, split)
 
 def read_image(path):
     dcm = pydicom.dcmread(path)
     x = dcm.pixel_array
     x = contrast_stretching(x)
     x = crop_and_pad(x, H, W)
-    # x = bm3d_denoising(x)
-    # x = x/np.max(x)
     x = (x - np.min(x)) / (np.max(x) - np.min(x))
     x = x.astype(np.float32)
     x = np.expand_dims(x, axis=-1)
+
+    # 2.5D architecture 
+    # x = nib.load(path)
+    # x = x.get_data()
+    # x = contrast_stretching(x)
+    # x = crop_and_pad(x, H, W)
+    # new_x = np.zeros((H,W,3))
+    # for i in range(x.shape[2]):
+    #     new_x[:,:,i] = crop_and_pad(x[:,:,i], H, W)
+    # new_x = (new_x - np.min(new_x)) / (np.max(new_x) - np.min(new_x))
+    # new_x = new_x.astype(np.float32)
+
+    
     return x
 
 def read_mask(path):

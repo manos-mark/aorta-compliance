@@ -9,9 +9,12 @@ import shutil
 from skimage import exposure
 from tqdm import tqdm
 from natsort import natsorted
+from skimage.draw import polygon2mask
 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+
 # DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
+# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'marfan_segmented') 
 DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
 MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
 
@@ -21,16 +24,68 @@ def create_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def press(event):
+    global the_key
+    the_key = event.key
 
-def generate_polygon(image_path, points, display=False):
+def generate_hull(image_path, points, display=True):
     image = dcmread(image_path)
     polygon = Image.new("L", (image.Columns, image.Rows))
 
     draw = ImageDraw.Draw(polygon)
     draw.polygon(points, fill=1)
-
+    
+    
     polygon = np.array(polygon).astype(bool)
     image = image.pixel_array
+    points = np.array([list(elem) for elem in points])
+    
+    points_rev = np.array([[point[1], point[0]] for point in points])
+    
+    
+    from scipy.spatial import ConvexHull
+    from skimage.draw import polygon2mask
+    
+    pol = polygon2mask(image.shape, points_rev)
+    # hull = ConvexHull(points)
+    
+    if display:
+        f, (ax1, ax2) = plt.subplots(1,2,figsize=(15,15), sharex=True, sharey=True)
+        
+        # plt.imshow(image, cmap='gray')
+        # plt.plot(points[:,0], points[:,1], 'o')
+        # ax3.plot(points[:,0], points[:,1], 'o')
+        # ax3.plot(points[hull.vertices,0], points[hull.vertices,1])
+        
+        ax1.imshow(image, cmap='gray')
+        ax1.imshow(pol, cmap='jet',alpha=0.2)
+        ax1.set_title('sk-polygon2mask')
+        
+        ax2.imshow(image, cmap='gray')
+        ax2.imshow(polygon, cmap='jet', alpha=0.2)
+        ax2.set_title('initial method')
+        
+        plt.draw()
+        plt.tight_layout()
+        plt.show()        
+        plt.gcf().canvas.mpl_connect('key_press_event', press)
+        while not plt.waitforbuttonpress(): pass  # ignore mouse events use by zomming ...
+        plt.close(f)
+
+    return polygon
+    
+
+def generate_polygon(image_path, points, display=False):
+    image = dcmread(image_path)
+    polygon = Image.new("L", (image.Columns, image.Rows))
+    image = image.pixel_array
+
+    # draw = ImageDraw.Draw(polygon)
+    # draw.polygon(points, fill=1)
+    # polygon = np.array(polygon).astype(bool)
+
+    points = np.array([[point[1], point[0]] for point in points])  
+    polygon = polygon2mask(image.shape, points)
 
     if display:
         fig, ax = plt.subplots()

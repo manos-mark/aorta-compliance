@@ -78,7 +78,7 @@ def update(val):
     fig.canvas.draw_idle()
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented'
+    EXPERIMENT = 'unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-KField/1'
     IMAGES_PATH = os.path.join('..', 'dataset', 'images')
     MASKS_PATH = os.path.join('..', 'dataset', 'masks')
 

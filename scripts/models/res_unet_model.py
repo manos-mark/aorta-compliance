@@ -9,17 +9,25 @@ from tensorflow.keras.layers import Conv2D, BatchNormalization, Activation, MaxP
 from tensorflow.keras.models import Model
 import tensorflow.keras.layers
 from tensorflow import keras
+import tensorflow_addons as tfa
+
 
 def conv_block(input, num_filters):
     conv = Conv2D(num_filters, 3, padding="same")(input)
-    conv = BatchNormalization(axis=3)(conv)
+    # conv = BatchNormalization(axis=3)(conv)
+    conv = tfa.layers.InstanceNormalization(axis=3, center=True, scale=True, 
+        beta_initializer="random_uniform", gamma_initializer="random_uniform")(conv)
     conv = Activation("relu")(conv)
 
     conv = Conv2D(num_filters, 3, padding="same")(conv)
-    conv = BatchNormalization(axis=3)(conv)
+    # conv = BatchNormalization(axis=3)(conv)
+    conv = tfa.layers.InstanceNormalization(axis=3, center=True, scale=True, 
+        beta_initializer="random_uniform", gamma_initializer="random_uniform")(conv)
     
     shortcut = Conv2D(num_filters, 1, padding="same")(input)
-    shortcut = BatchNormalization(axis=3)(shortcut)
+    # shortcut = BatchNormalization(axis=3)(shortcut)
+    shortcut = tfa.layers.InstanceNormalization(axis=3, center=True, scale=True, 
+        beta_initializer="random_uniform", gamma_initializer="random_uniform")(input)
     
     res_path = tensorflow.keras.layers.add([shortcut, conv])
     res_path = Activation("relu")(res_path) 

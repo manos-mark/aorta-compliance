@@ -39,7 +39,6 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
         desc_max = df.loc[patient_id, 'desc-max']
         desc_compliance = df.loc[patient_id, 'desc-compliance'] 
         desc_distensibility = df.loc[patient_id, 'desc-distensibility']
-        print(asc_distensibility)
     except:
         print('WARNING: Excel file is not correct')
         return None, None, None, None, None
@@ -90,7 +89,7 @@ def compute_distensibility(compliance, min_area):
 
 def segment_aorta(model, image, display=False):
     """ Predicting the mask """
-    y_pred = model.predict(np.expand_dims(image, axis=0))[0] > 0.5
+    y_pred = model.predict(np.expand_dims(image, axis=0))[0] > 0.1
     y_pred = y_pred.astype(np.float32)
 
     if display:
@@ -104,7 +103,7 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana-lr_0.0001-batch_8-augmented' # 'unet-diana-lr_0.001-batch_8-augmented'
+    EXPERIMENT = 'unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield/2' #'unet-diana-lr_0.0001-batch_8-augmented'
     
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
@@ -117,7 +116,8 @@ if __name__ == '__main__':
     """ Loading model """
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss, 'hausdorff': hausdorff}):
         model = tf.keras.models.load_model(os.path.join('..', "output", EXPERIMENT, "model.h5"), compile=False)    
-    
+        # model = tf.keras.models.load_model('gan-unet.h5', compile=False)
+
     results_df = pd.DataFrame()
     predicted_compliances, original_compliances = ([] for i in range(2))
     predicted_distensibilities, original_distensibilities = ([] for i in range(2))
@@ -133,10 +133,11 @@ if __name__ == '__main__':
         create_dir(masks_output_folder_path)
     
         """ Loading patient images """
-        image_paths = glob.glob(f'{patient_folder_path}/**/*.IMA', recursive=True)
+        image_paths = natsorted(glob.glob(f'{patient_folder_path}/**/*.ima', recursive=True))
+        image_paths += natsorted(glob.glob(f'{patient_folder_path}/**/*.IMA', recursive=True))
      
         """ Loading patient predicted masks """
-        masks = glob.glob(f'{masks_output_folder_path}/**/*.png', recursive=True)
+        masks = natsorted(glob.glob(f'{masks_output_folder_path}/**/*.png', recursive=True))
         
         """ Fetch pressure & areas from excel and compute compliance """
         original_compliance, original_min, original_max, resolution, original_distensibility = compute_compliance_from_excel(patient_id, excel_path)
@@ -154,7 +155,7 @@ if __name__ == '__main__':
         area_per_slice = []
         rows = int(math.ceil(len(image_paths)/5))
         fig, axs = plt.subplots(rows, 5, figsize=(30,30))
-        for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):  
+        for k, image_path in enumerate(tqdm(image_paths, total=len(image_paths))):
             mask_name = image_path.split(os.sep)[3] + '_' + str(k) + '.png'
             image = read_image(image_path)
             H,W = ((dcmread(image_path)).pixel_array).shape
@@ -190,7 +191,7 @@ if __name__ == '__main__':
             area = cv2.countNonZero(aorta)
             
             """ Convert pixel to milimeters """
-            area = int(area * resolution * resolution) # TODO is this correct? 
+            area = int(area * resolution * resolution) 
             area_per_slice.append(area)
             fig.tight_layout()
             
@@ -213,21 +214,20 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
         plt.clf()
         
-        area_std = np.std(area_per_slice)
-        print('\nPredicted areas STD: ', area_std)
-
-        """ Get the minimum and maximum areas across all slices """        
-        min_area = min(area_per_slice)
-        max_area = max(area_per_slice)        
-
-#        if area_std > 20:
-#            """ Get the median of 3 values close to minimum and maximum areas across all slices """
-#            temp_area_per_slice = area_per_slice.copy()
-#            temp_area_per_slice = temp_area_per_slice[0: len(temp_area_per_slice)//2]
-#            temp_area_per_slice = np.sort(area_per_slice)
-#            min_area = np.median(temp_area_per_slice[:5])
-#            max_area = np.median(temp_area_per_slice[5:])
+        """ Get the minimum and maximum areas across all slices """   
+        area_std = np.std(area_per_slice)     
+        if area_std < 30:
+            min_area = min(area_per_slice[:len(area_per_slice)//2])
+            max_area = max(area_per_slice[:len(area_per_slice)//2])
+        else:
+            min_area = min(area_per_slice)
+            max_area = max(area_per_slice)
         
+#        """ Get the median of 3 values close to minimum and maximum areas across all slices """
+#        area_per_slice.sort()
+#        min_area = np.median(np.array(area_per_slice[:5]))
+#        max_area = np.median(np.array(area_per_slice[5:]))
+        print('\nPredicted areas STD: ', area_std)
         print('Original min, max areas : ', original_min, original_max)
         print('Predicted min, max areas: ', min_area, max_area)
 
