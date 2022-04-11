@@ -13,7 +13,7 @@ def conv_block(input, num_filters):
     x = Activation("relu")(x)
 
     x = Conv2D(num_filters, 3, padding="same")(x)
-    x = BatchNormalization()(x)
+    # x = BatchNormalization()(x)
     # x = Dropout(0.5)(x)
     # x = tfa.layers.GroupNormalization(groups=16, axis=3)(x)
     x = tfa.layers.InstanceNormalization(axis=3, center=True, scale=True, 
