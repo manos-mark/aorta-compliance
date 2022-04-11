@@ -31,10 +31,10 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
         resolution = df.loc[patient_id, 'Resolution']
         syst_press = df.loc[patient_id, 'PS']
         diast_press = df.loc[patient_id, 'PD']
-        asc_min = df.loc[patient_id, 'asc-min']
-        asc_max = df.loc[patient_id, 'asc-max']
-        asc_compliance = df.loc[patient_id, 'asc-compliance']
-        asc_distensibility = df.loc[patient_id, 'asc-distensibility']
+        asc_min = df.loc[patient_id, 'asc-min-QIR']
+        asc_max = df.loc[patient_id, 'asc-max-QIR']
+        asc_compliance = df.loc[patient_id, 'asc-compliance-QIR']
+        asc_distensibility = df.loc[patient_id, 'asc-distensibility-QIR']
         desc_min = df.loc[patient_id, 'desc-min']
         desc_max = df.loc[patient_id, 'desc-max']
         desc_compliance = df.loc[patient_id, 'desc-compliance'] 
@@ -125,6 +125,7 @@ if __name__ == '__main__':
    
     """ Iterate through every patient """
     for patient_id in patient_ids:
+        print('Patient ID: ', patient_id)
         patient_folder_path = os.path.join(DATASET_FOLDER_PATH, patient_id)  
         patient_output_folder_path = os.path.join('..', 'results', EXPERIMENT, patient_id)
         masks_output_folder_path = os.path.join('..', 'results', EXPERIMENT, patient_id, 'masks')
@@ -212,15 +213,21 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
         plt.clf()
         
+        area_std = np.std(area_per_slice)
+        print('\nPredicted areas STD: ', area_std)
+
         """ Get the minimum and maximum areas across all slices """        
         min_area = min(area_per_slice)
-        max_area = max(area_per_slice)
+        max_area = max(area_per_slice)        
+
+#        if area_std > 20:
+#            """ Get the median of 3 values close to minimum and maximum areas across all slices """
+#            temp_area_per_slice = area_per_slice.copy()
+#            temp_area_per_slice = temp_area_per_slice[0: len(temp_area_per_slice)//2]
+#            temp_area_per_slice = np.sort(area_per_slice)
+#            min_area = np.median(temp_area_per_slice[:5])
+#            max_area = np.median(temp_area_per_slice[5:])
         
-#        """ Get the median of 3 values close to minimum and maximum areas across all slices """
-#        area_per_slice.sort()
-#        min_area = np.median(np.array(area_per_slice[:5]))
-#        max_area = np.median(np.array(area_per_slice[5:]))
-        print('\nPredicted areas STD: ', np.std(area_per_slice))
         print('Original min, max areas : ', original_min, original_max)
         print('Predicted min, max areas: ', min_area, max_area)
 

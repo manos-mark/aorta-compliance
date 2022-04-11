@@ -15,17 +15,17 @@ class Imager:
         self.values = datasets[0] # Get only the volume data
         # out of all the nifti file this is actually an array
         self._segmentation = np.zeros(self.size[0:3]) # Create an empty segmentation
-        self._contours = 0  # To check wether to show contours or mask
-        self._quarters = 0
-        self._cog = 0
+        self._show_contours = False  # To check wether to show contours or mask
+        self._split_quarters = False
+        self._apply_cog = False
         # Get Voxel Size for calculation of the EF (not needed but in case Volumes want to be retrieved, Real Magnitude are computed)
         self.spacing = datasets[1].PixelSpacing
         self.area = np.zeros(shape=(self.size[0])) # Attribute to store volume of the segmentation
         self.areaquart = np.zeros(shape=(self.size[0],4))
         self.center = np.zeros(shape=(self.size[0],2))
         
-    def segmentation(self, volume, ch=0, cog=0):
-        if cog == 1:
+    def segmentation(self, volume, convex_hull=False, cog=False):
+        if cog:
             x0 = np.zeros(self.size[0])
             y0 = np.zeros(self.size[0])
             for i in range(self.size[0]):
@@ -38,15 +38,18 @@ class Imager:
             for i in range(self.size[0]):
                 y_coords, x_coords = np.where((volume[i,:,:]==1))
                 self.center[i,:]= np.mean(y_coords), np.mean(x_coords)
-        if ch==1:
+        
+        if convex_hull:
             for i in range(volume.shape[0]):
                 volume[i,:,:] = convex_hull_image(volume[i,:,:])
         else:
             volume = volume     # Change the Seentation and calculate its Volume
         self._segmentation = volume
+        
         for i in range(self.size[0]):
             #self.area[i] = np.sum(convex_hull_image(self._segmentation[i,:,:]==1))*self.spacing[0]*self.spacing[1]
             self.area[i] = np.sum(self._segmentation[i,:,:]==1)*self.spacing[0]*self.spacing[1]
+        
         for i in range(self.size[0]):
             y0, x0 = self.center[i,:]
             y_coords, x_coords = np.where((self._segmentation[i,:,:]==1))
@@ -77,19 +80,16 @@ class Imager:
         self.segmentation(self._segmentation)
         
     def contours(self, value):  # Cahnge contours option
-        self._contours = value
+        self._show_contours = value
 
     def quarters(self, value):
-        self._quarters = value
-
-    def quarters(self, value):
-        self._quarters = value
+        self._split_quarters = value
         
     @property
     def index(self):    # Get index of the slice
         return self._index
     
-    def get_num_im(self):   # Get number of slices
+    def get_slice_cnt(self):   # Get number of slices
         return self.size[0] # Num of slices is the 3rd item in size
     
     @index.setter
@@ -104,13 +104,13 @@ class Imager:
         # to be plotted properly on the canvas (uint8)
         res = img.astype('uint8') # Create RGB image
         if (np.sum(self._segmentation)>0):  # If segmentation, plot it in red (mask or contours)
-            if (self._quarters == 0):
-                if(self._contours==0):
+            if not self._split_quarters:
+                if not self._show_contours:
                     res[:,:,0] = np.where((self._segmentation[index,:,:]==1), 255, res[:,:,0])
                 else:
                     res[:,:,0] = np.where(find_boundaries((self._segmentation[index,:,:]==1), mode='inner'), 255, res[:,:,0])
             else:
-                if(self._contours==0):
+                if not self._show_contours:
                     y_coords, x_coords = np.where((self._segmentation[index,:,:]==1))
                     y0, x0 = self.center[index,:]
                     coords = np.zeros((len(x_coords),2))
