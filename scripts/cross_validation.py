@@ -27,7 +27,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield"
+EXPERIMENT = "res_unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-Kfield"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 8
+    batch_size = 4
     lr = 1e-3
     num_epochs = 200
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         valid_dataset = tf_dataset(train_x[val], train_y[val], batch=batch_size, augment=False)
     
         """ Model """
-        model = build_unet((H, W, 1))
+        model = build_res_unet((H, W, 1))
         # pretrained_model_path = os.path.join('..', 'output', 
         #     'autoencoder-batch_16-epochs_500-adam-mse-relu', 'unet_pretrained.h5') 
         # model.load_weights(pretrained_model_path)

@@ -27,7 +27,7 @@ def conv_block(input, num_filters):
     shortcut = Conv2D(num_filters, 1, padding="same")(input)
     # shortcut = BatchNormalization(axis=3)(shortcut)
     shortcut = tfa.layers.InstanceNormalization(axis=3, center=True, scale=True, 
-        beta_initializer="random_uniform", gamma_initializer="random_uniform")(input)
+        beta_initializer="random_uniform", gamma_initializer="random_uniform")(shortcut)
     
     res_path = tensorflow.keras.layers.add([shortcut, conv])
     res_path = Activation("relu")(res_path) 

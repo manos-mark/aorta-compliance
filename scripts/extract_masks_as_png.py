@@ -80,12 +80,12 @@ def generate_polygon(image_path, points, display=False):
     polygon = Image.new("L", (image.Columns, image.Rows))
     image = image.pixel_array
 
-    # draw = ImageDraw.Draw(polygon)
-    # draw.polygon(points, fill=1)
-    # polygon = np.array(polygon).astype(bool)
+    draw = ImageDraw.Draw(polygon)
+    draw.polygon(points, fill=1)
+    polygon = np.array(polygon).astype(bool)
 
-    points = np.array([[point[1], point[0]] for point in points])  
-    polygon = polygon2mask(image.shape, points)
+    # points = np.array([[point[1], point[0]] for point in points])  
+    # polygon = polygon2mask(image.shape, points)
 
     if display:
         fig, ax = plt.subplots()
