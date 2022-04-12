@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from tkinter import Tk
-from mainwindow import MainWindow
+from main_window import MainWindow
 
 # Main definition of the program
 def main():
