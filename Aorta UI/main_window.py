@@ -319,7 +319,29 @@ class MainWindow(tk.Frame):
         filemenu.add_separator()
         filemenu.add_command(label="Save Segmentations", command=self.save_segmentation)
         filemenu.add_command(label="Exit", command=self.on_exit)
-
+        
+    def wheel(self, event):
+        ''' Zoom with mouse wheel '''
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        bbox = self.canvas.bbox(self.container)  # get image area
+        if bbox[0] < x < bbox[2] and bbox[1] < y < bbox[3]: pass  # Ok! Inside the image
+        else: return  # zoom only inside image area
+        scale = 1.0
+        # Respond to Linux (event.num) or Windows (event.delta) wheel event
+        if event.num == 5 or event.delta == -120:  # scroll down
+            i = min(self.width, self.height)
+            if int(i * self.imscale) < 30: return  # image is less than 30 pixels
+            self.imscale /= self.delta
+            scale        /= self.delta
+        if event.num == 4 or event.delta == 120:  # scroll up
+            i = min(self.canvas.winfo_width(), self.canvas.winfo_height())
+            if i < self.imscale: return  # 1 pixel is bigger than the visible area
+            self.imscale *= self.delta
+            scale        *= self.delta
+        self.canvas.scale('all', x, y, scale, scale)  # rescale all canvas objects
+        self.show_image()
+        
     def show_image(self, numpy_array): # Function to create Canvas for Systolic Volume
         if numpy_array is None:
             return
@@ -410,16 +432,20 @@ class MainWindow(tk.Frame):
 
         self.canvas.bind('<ButtonPress-1>', self.move_from)
         self.canvas.bind('<B1-Motion>',     self.move_to)
+        self.canvas.bind('<MouseWheel>', self.wheel)  # with Windows and MacOS, but not Linux
+        self.canvas.bind('<Button-5>',   self.wheel)  # only with Linux, wheel scroll down
+        self.canvas.bind('<Button-4>',   self.wheel)  # only with Linux, wheel scroll up
 
         self.imscale = 1.0
         self.image_id = None
-        self.delta = 0.75        
+        self.delta = 1.3     
         
         self.segment_btn.grid(row=1, column=0, sticky=None)
         self.prev_btn.grid(row=1, column=0, sticky=tk.NW, pady=50)
         self.next_btn.grid(row=1, column=0, sticky=tk.NE, pady=50)
         self.show_image(self.imager.get_current_image())
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+        self.container = self.canvas.create_rectangle((0, 0, self.image.size), width=0)
         self.slider = tk.Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient=tk.HORIZONTAL)
         self.slider.grid(row=1, column=0, sticky='ewn')
         
