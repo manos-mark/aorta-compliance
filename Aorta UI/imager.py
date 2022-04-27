@@ -1,5 +1,4 @@
 import numpy as np
-import pydicom as dicom
 from skimage.morphology.convex_hull import convex_hull_image
 from skimage.segmentation import find_boundaries
 from math import pi
