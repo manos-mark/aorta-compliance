@@ -73,6 +73,11 @@ class Imager:
 
     def del_curr_seg(self):
         self._segmentation[self._index,:,:] = self._segmentation[self._index,:,:]*0
+        self.area[self._index] = 0
+        self.areaquart[self._index,0] = 0
+        self.areaquart[self._index,1] = 0
+        self.areaquart[self._index,2] = 0
+        self.areaquart[self._index,3] = 0
     
     def update_seg(self, array):
         self._segmentation[self._index,:,:] = array
@@ -129,10 +134,13 @@ class Imager:
                 q3 = np.array([coords[i,:] for i in range(len(coords)) if -3/4*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/4]).astype(int)
                 q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/4<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
                 q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/4]).astype(int)))
-                res[q1[:,1],q1[:,0],0] = 255
-                res[q2[:,1],q2[:,0],1] = 255
-                res[q3[:,1],q3[:,0],2] = 255
-                res[q4[:,1],q4[:,0],0:2] = 255
+                try:
+                    res[q1[:,1],q1[:,0],0] = 255
+                    res[q2[:,1],q2[:,0],1] = 255
+                    res[q3[:,1],q3[:,0],2] = 255
+                    res[q4[:,1],q4[:,0],0:2] = 255
+                except:
+                    return res
         return res
 
     def get_current_image(self):    # Get current image
