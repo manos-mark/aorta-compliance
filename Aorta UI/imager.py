@@ -36,8 +36,8 @@ class Imager:
         else:
             for i in range(self.size[0]):
                 y_coords, x_coords = np.where((volume[i,:,:]==1))
-                self.center[i,:]= np.mean(y_coords), np.mean(x_coords)
-        
+                self.center[i,:] = np.mean(y_coords), np.mean(x_coords)
+                    
         if convex_hull:
             for i in range(volume.shape[0]):
                 volume[i,:,:] = convex_hull_image(volume[i,:,:])
@@ -71,13 +71,18 @@ class Imager:
     def get_segmentation(self):     # Retrieve the segmentation
         return self._segmentation
 
-    def del_curr_seg(self):
-        self._segmentation[self._index,:,:] = self._segmentation[self._index,:,:]*0
-        self.area[self._index] = 0
-        self.areaquart[self._index,0] = 0
-        self.areaquart[self._index,1] = 0
-        self.areaquart[self._index,2] = 0
-        self.areaquart[self._index,3] = 0
+    def del_curr_seg(self):        
+        self.size = np.array(self.size)
+        self.size[0] -=1
+        self.size = tuple(self.size)
+
+        self._segmentation = np.delete(self._segmentation, self._index, axis=0)
+        self.area = np.delete(self.area, self._index, axis=0)
+        self.center = np.delete(self.center, self._index, axis=0)
+        self.areaquart = np.delete(self.areaquart, self._index, axis=0)
+        print(self.values.shape)
+        self.values = np.delete(self.values, self._index, axis=0)
+        print(self.values.shape)
     
     def update_seg(self, array):
         self._segmentation[self._index,:,:] = array
