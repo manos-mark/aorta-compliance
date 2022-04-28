@@ -31,10 +31,10 @@ def compute_compliance_from_excel(patient_id, excel_path, asc_or_desc='asc'):
         resolution = df.loc[patient_id, 'Resolution']
         syst_press = df.loc[patient_id, 'PS']
         diast_press = df.loc[patient_id, 'PD']
-        asc_min = df.loc[patient_id, 'asc-min-QIR']
-        asc_max = df.loc[patient_id, 'asc-max-QIR']
-        asc_compliance = df.loc[patient_id, 'asc-compliance-QIR']
-        asc_distensibility = df.loc[patient_id, 'asc-distensibility-QIR']
+        asc_min = df.loc[patient_id, 'asc-min']
+        asc_max = df.loc[patient_id, 'asc-max']
+        asc_compliance = df.loc[patient_id, 'asc-compliance']
+        asc_distensibility = df.loc[patient_id, 'asc-distensibility']
         desc_min = df.loc[patient_id, 'desc-min']
         desc_max = df.loc[patient_id, 'desc-max']
         desc_compliance = df.loc[patient_id, 'desc-compliance'] 
@@ -103,8 +103,8 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield/2' #'unet-diana-lr_0.0001-batch_8-augmented'
-    
+    EXPERIMENT = 'res-unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield/1'
+
     """ File paths """
     excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
     DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented')
@@ -216,12 +216,12 @@ if __name__ == '__main__':
         
         """ Get the minimum and maximum areas across all slices """   
         area_std = np.std(area_per_slice)     
-        if area_std < 30:
-            min_area = min(area_per_slice[:len(area_per_slice)//2])
-            max_area = max(area_per_slice[:len(area_per_slice)//2])
-        else:
-            min_area = min(area_per_slice)
-            max_area = max(area_per_slice)
+        # if area_std < 30:
+        #     min_area = min(area_per_slice[:len(area_per_slice)//2])
+        #     max_area = max(area_per_slice[:len(area_per_slice)//2])
+        # else:
+        min_area = min(area_per_slice)
+        max_area = max(area_per_slice)
         
 #        """ Get the median of 3 values close to minimum and maximum areas across all slices """
 #        area_per_slice.sort()
@@ -252,16 +252,16 @@ if __name__ == '__main__':
         """ Save results to file """
         df = pd.DataFrame([{
                 'patient_id': patient_id,
-                'min_area': original_min, 
-                'max_area': original_max, 
                 'syst_press': syst_press, 
                 'diast_press': diast_press,
-                'min_area_pred': min_area, 
-                'max_area_pred': max_area,
+                'min_area': original_min, 
+                'min_area_pred': min_area,
+                'max_area': original_max, 
+                'max_area_pred': max_area,   
                 'compliance': original_compliance,
                 'compliance_pred': predicted_compliance,
                 'distensibility': original_distensibility,
-                'distensibility_pred': predicted_distensibility
+                'distensibility_pred': predicted_distensibility,
             }])
         try:
             results_df = pd.concat([results_df, df], axis=0)
@@ -269,7 +269,7 @@ if __name__ == '__main__':
         except:
             print('WARNING!!! Dublicate patient_id: ', patient_id)
         print('\n ========================================================================== \n')
-    
+
     results_df.to_excel(os.path.join(experiment_results_folder_path, 'results.xlsx'))
     
     pyCompare.blandAltman(original_compliances, predicted_compliances, 
