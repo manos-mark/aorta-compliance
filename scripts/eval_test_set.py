@@ -59,7 +59,7 @@ def interpret_training_results():
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = 'res_unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-Kfield'
+EXPERIMENT = 'res_unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-Kfield/4'
 OUTPUT_FOLDER_PATH = os.path.join('..', 'results', EXPERIMENT)
 
 if __name__ == "__main__":
