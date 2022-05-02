@@ -272,22 +272,22 @@ if __name__ == '__main__':
 
     results_df.to_excel(os.path.join(experiment_results_folder_path, 'results.xlsx'))
     
-    pyCompare.blandAltman(original_compliances, predicted_compliances, 
+    pyCompare.blandAltman(predicted_compliances, original_compliances, 
             savePath=os.path.join(experiment_results_folder_path, 'ComplianceFigure.svg'), 
             figureFormat='svg')
     plt.clf()
     
-    pyCompare.blandAltman(original_min_areas, predicted_min_areas, 
+    pyCompare.blandAltman(predicted_min_areas, original_min_areas, 
             savePath=os.path.join(experiment_results_folder_path, 'MinAreasFigure.svg'), 
             figureFormat='svg')
     plt.clf()
     
-    pyCompare.blandAltman(original_max_areas, predicted_max_areas, 
+    pyCompare.blandAltman(predicted_max_areas, original_max_areas, 
             savePath=os.path.join(experiment_results_folder_path,'MaxAreasFigure.svg'), 
             figureFormat='svg')
     plt.clf()
     
-    pyCompare.blandAltman(original_distensibilities, predicted_distensibilities, 
+    pyCompare.blandAltman(predicted_distensibilities, original_distensibilities, 
             savePath=os.path.join(experiment_results_folder_path,'DistensibilityFigure.svg'), 
             figureFormat='svg')
     plt.clf()
