@@ -32,22 +32,32 @@ class SegmentationNetwork():
         return results
 
     def prepare_for_net(self, img): # Preprocessing needed before the Model Inference
-        slice_cnt = img.shape[0]   # Get number of slices
-        img_tf = np.empty((slice_cnt, 256, 256, 1)) # Create the 3-Channels volume
+        # slice_cnt = img.shape[0]   # Get number of slices
+        # img_tf = np.empty((slice_cnt, 256, 256, 1)) # Create the 3-Channels volume
         
-        for i in range(slice_cnt):
-            new_img = img[i,:,:,:]
-            new_img = contrast_stretching(new_img)
-            new_img = crop_and_pad(new_img[:,:,0], 256,256)
-            new_img = (new_img-new_img.min()) / (new_img.max() - new_img.min())   # Normalize in the range [0, 1]
-            new_img = new_img.astype(np.float32)
-            img_tf[i,:,:,0] = new_img
+        # for i in range(slice_cnt):
+        #     new_img = img[i,:,:,:]
+        #     new_img = contrast_stretching(new_img)
+        #     new_img = crop_and_pad(new_img[:,:,0], 256,256)
+        #     new_img = (new_img-new_img.min()) / (new_img.max() - new_img.min())   # Normalize in the range [0, 1]
+        #     new_img = new_img.astype(np.float32)
+        #     img_tf[i,:,:,0] = new_img
+        
+        img_tf = np.empty((1, 256, 256, 1))
+        new_img = contrast_stretching(img)
+        new_img = crop_and_pad(new_img[:,:,0], 256,256)
+        new_img = (new_img-new_img.min()) / (new_img.max() - new_img.min())   # Normalize in the range [0, 1]
+        new_img = new_img.astype(np.float32)
+        img_tf[0,:,:,0] = new_img
         return img_tf
 
     def recover_shape(self, init_array, new_array): # Recover Original matrix size
-        img_tf = np.empty((new_array.shape[0], init_array.shape[1], init_array.shape[2], 1))
-        for i in range(new_array.shape[0]):
-            img_tf[i,:,:,0] = crop_and_pad(new_array[i,:,:,0], init_array.shape[1], init_array.shape[2])
+        # img_tf = np.empty((new_array.shape[0], init_array.shape[1], init_array.shape[2], 1))
+        # for i in range(new_array.shape[0]):
+        #     img_tf[i,:,:,0] = crop_and_pad(new_array[i,:,:,0], init_array.shape[1], init_array.shape[2])
+        img_tf = np.empty((init_array.shape[0], init_array.shape[1], 1))
+        img_tf[:,:,0] = crop_and_pad(new_array[0,:,:,0], init_array.shape[0], init_array.shape[1])
+        
         return img_tf
 
 # For development, considers the relative path in string

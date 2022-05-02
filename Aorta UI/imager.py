@@ -80,9 +80,7 @@ class Imager:
         self.area = np.delete(self.area, self._index, axis=0)
         self.center = np.delete(self.center, self._index, axis=0)
         self.areaquart = np.delete(self.areaquart, self._index, axis=0)
-        print(self.values.shape)
         self.values = np.delete(self.values, self._index, axis=0)
-        print(self.values.shape)
     
     def update_seg(self, array):
         self._segmentation[self._index,:,:] = array
@@ -105,9 +103,10 @@ class Imager:
     def index(self, value): # Always remain in the range [0, num of slices]
         while value < 0:
             value += self.size[2]
-        self._index = value % self.size[2]
+        self._index = int(value % self.size[2])
 
     def get_image(self, index):     # Get np array of the corresponding slice
+        index = int(index)
         img = self.values[index, :, :, :] # Get the slice of interest
         img = 255.0 * img # Normalize the values
         # to be plotted properly on the canvas (uint8)

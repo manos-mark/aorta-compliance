@@ -9,17 +9,19 @@ from segmentation_network import SegmentationNetwork
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt 
 import nibabel as nib
-import tkinter as tk
+from tkinter import *
+# from tkinter import Tk, Menu, BooleanVar, StringVar
+from tkinter.ttk import *
 import re
 import copy
 
-class StatusBar(tk.Frame):
+class StatusBar(Frame):
     height = 19
 
     def __init__(self, master): # Initialize the status bar and place it in the GUI
-        tk.Frame.__init__(self, master)
-        self.label = tk.Label(self, bd=1, relief=tk.GROOVE, anchor=tk.W)
-        self.label.pack(fill=tk.BOTH)
+        Frame.__init__(self, master)
+        self.label = Label(self, relief='groove', anchor='w')
+        self.label.pack(fill='both')
 
     def set(self, format_str, *args): # Change the text on the status bar
         self.label.config(text=format_str % args, font=("TkDefaultFont",12))
@@ -30,7 +32,7 @@ class StatusBar(tk.Frame):
         self.label.update_idletasks()
 
 
-class AutoScrollbar(tk.Scrollbar):
+class AutoScrollbar(Scrollbar):
     ''' A scrollbar that hides itself if it's not needed.
         Works only if you use the grid geometry manager '''
     def set(self, lo, hi):
@@ -38,18 +40,18 @@ class AutoScrollbar(tk.Scrollbar):
             self.grid_remove()
         else:
             self.grid()
-        tk.Scrollbar.set(self, lo, hi)
+        Scrollbar.set(self, lo, hi)
 
     def pack(self, **kw):
-        raise tk.TclError('Cannot use pack with this widget')
+        raise TclError('Cannot use pack with this widget')
 
     def place(self, **kw):
-        raise tk.TclError('Cannot use place with this widget')
+        raise TclError('Cannot use place with this widget')
 
 # Class to define structure, connections and widgets inside the GUI
-class MainWindow(tk.Frame):
+class MainWindow(Frame):
     def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
+        Frame.__init__(self, parent)
         self.parent = parent # This is the GUI object (root)
         
         # Systolic Volume will be subscripted with index 1
@@ -63,7 +65,7 @@ class MainWindow(tk.Frame):
         self.slice_cnt = None
         self.prev_btn = None
         self.next_btn = None
-        self.volume = []   # To store both volumes
+        self.volume = np.array([])   # To store both volumes
         self.filename = ''     # To store file names for optional saving
         self.init_ui()
 
@@ -77,14 +79,14 @@ class MainWindow(tk.Frame):
         self.parent.rowconfigure([0], weight=3)
         self.parent.rowconfigure([1], weight=1)
         # Image canvas 
-        self.show_contours_status = tk.BooleanVar()
-        self.split_quarters_status = tk.BooleanVar()
-        self.convex_hull_status = tk.BooleanVar()
-        self.correct_cog_status = tk.BooleanVar()
+        self.show_contours_status = BooleanVar()
+        self.split_quarters_status = BooleanVar()
+        self.convex_hull_status = BooleanVar()
+        self.correct_cog_status = BooleanVar()
         self.compliance = np.zeros(shape=(5,))
-        self.systolic_pressure = tk.StringVar(value='130')
-        self.diastolic_pressure = tk.StringVar(value='80')
-        self.result = tk.StringVar()
+        self.systolic_pressure = StringVar(value='130')
+        self.diastolic_pressure = StringVar(value='80')
+        self.result = StringVar()
         # Load the model and initiate it (avoid of doing it when aplying the model)
         self.model = SegmentationNetwork()
         # Message Function
@@ -105,34 +107,42 @@ class MainWindow(tk.Frame):
 
 
         self.status = StatusBar(self.parent)
-        self.status.grid(row=1, column=0, sticky=(tk.S, tk.W))
+        self.status.grid(row=1, column=0, sticky='SW')
         self.slice_cnt = StatusBar(self.parent)
-        self.prev_btn = tk.Button(self.parent,text = '< Previous', command = self.previous_action)
-        self.next_btn = tk.Button(self.parent,text = 'Next >', command = self.next_action)
+        self.prev_btn = Button(self.parent,text = '< Previous', command = self.previous_action)
+        self.next_btn = Button(self.parent,text = 'Next >', command = self.next_action)
         
-        self.manual_segmentation_btn = tk.Button(self.parent,text = 'Segment Manually', command = self.manual_segmentation_action)
-        self.manual_segmentation_end_btn = tk.Button(self.parent,text = 'End Segmentation', command = self.manual_segmentation_end_action)
-        self.systolic_pressure_label = tk.Label(self.parent, text="Systolic Pressure: ")
-        self.diastolic_pressure_label = tk.Label(self.parent, text="Diastolic Pressure: ")
-        self.result_label = tk.Label(self.parent, textvariable=self.result, relief=(tk.RAISED))
-        self.systolic_pressure_entry = tk.Entry(self.parent, textvariable=self.systolic_pressure, width=2)
-        self.diastolic_pressure_entry = tk.Entry(self.parent, textvariable=self.diastolic_pressure, width=2)
+        self.manual_segmentation_btn = Button(self.parent,text = 'Segment Manually', command = self.manual_segmentation_action)
+        self.manual_segmentation_end_btn = Button(self.parent,text = 'End Segmentation', command = self.manual_segmentation_end_action)
+        self.systolic_pressure_label = Label(self.parent, text="Systolic Pressure: ")
+        self.diastolic_pressure_label = Label(self.parent, text="Diastolic Pressure: ")
+        self.result_label = Label(self.parent, textvariable=self.result, relief=('raised'))
+        self.systolic_pressure_entry = Entry(self.parent, textvariable=self.systolic_pressure, width=2)
+        self.diastolic_pressure_entry = Entry(self.parent, textvariable=self.diastolic_pressure, width=2)
+        self.segment_btn = Button(self.parent, text = 'Segment Aorta', command = self.segment_action)   
         
-        self.segment_btn = tk.Button(self.parent, text = 'Segment Aorta', command = self.segment_action)   
-        self.remove_slice_segmentation_btn = tk.Button(self.parent, text = 'Remove slice segmentation', command = self.remove_slice_segmentation, bg='red', fg='white')
-        self.compute_compliance_btn = tk.Button(self.parent,text = 'Compute Compliance', command = self.compute_compliance_action, bg='green', fg='white')
-        self.show_contours_checkbtn = tk.Checkbutton(self.parent, text="Show contour", variable=self.show_contours_status, command = self.show_contours_action)
-        self.convex_hull_checkbtn = tk.Checkbutton(self.parent, text="Apply Convex Hull", variable=self.convex_hull_status, command=self.convex_hull_action)
-        self.cog_checkbtn = tk.Checkbutton(self.parent, text="Correct c.o.g.", variable=self.correct_cog_status, command=self.cog_action)
-        self.split_quarters_checkbtn = tk.Checkbutton(self.parent, text="Quarters", variable=self.split_quarters_status, command = self.split_quarters_action)
+        red_btn_style = Style()
+        red_btn_style.configure('BR.TButton', background='red', foreground='red')
+        self.delete_slice_btn = Button(self.parent, text = 'Delete slice', command = self.remove_slice_segmentation, style='BR.TButton')
         
-        self.import_btn = tk.Button(self.parent, text="Import Dicom", command=self.on_load_dicom, bg='grey', fg='black', height='1', font=("Helvetica 16 bold"))
+        green_btn_style = Style()
+        green_btn_style.configure('BG.TButton', background='green', foreground='green')
+        self.compute_compliance_btn = Button(self.parent,text = 'Compute Compliance', command = self.compute_compliance_action, style='BG.TButton')
+        
+        self.show_contours_checkbtn = Checkbutton(self.parent, text="Show contour", variable=self.show_contours_status, command = self.show_contours_action)
+        self.convex_hull_checkbtn = Checkbutton(self.parent, text="Apply Convex Hull", variable=self.convex_hull_status, command=self.convex_hull_action)
+        self.cog_checkbtn = Checkbutton(self.parent, text="Correct c.o.g.", variable=self.correct_cog_status, command=self.cog_action)
+        self.split_quarters_checkbtn = Checkbutton(self.parent, text="Quarters", variable=self.split_quarters_status, command = self.split_quarters_action)
+        
+        # self.import_btn = Button(self.parent, text="Import Dicom", command=self.on_load_dicom, background='grey', foreground='black', height='1', font=("Helvetica 16 bold"))
+        self.import_btn = Button(self.parent, text="Import Dicom", command=self.on_load_dicom)
         self.import_btn.grid(row=0, column=0, sticky='new')
 #        
-#        save_segmentations_btn = tk.Button(self.parent, text = "Save Segmentations", command=self.save_segmentation, bg='grey', fg='black', height='1', font=("Helvetica 16 bold"))
+#        save_segmentations_btn = Button(self.parent, text = "Save Segmentations", command=self.save_segmentation, background='grey', foreground='black', height='1', font=("Helvetica 16 bold"))
 #        save_segmentations_btn.grid(row=0, column=1, sticky='nsew')
 #        
-        self.exit_btn = tk.Button(self.parent, text = "Exit", command=self.on_exit, bg='grey', fg='black', height='1', font=("Helvetica 16 bold"))
+        # self.exit_btn = Button(self.parent, text = "Exit", command=self.on_exit, background='grey', foreground='black', height='1', font=("Helvetica 16 bold"))
+        self.exit_btn = Button(self.parent, text = "Exit", command=self.on_exit)
         self.exit_btn.grid(row=0, column=1, sticky='new')
         
     def remove_slice_segmentation(self):
@@ -142,7 +152,7 @@ class MainWindow(tk.Frame):
 
         self.imager.del_curr_seg()
         
-        self.slider = tk.Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient=tk.HORIZONTAL)
+        self.slider = Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient=HORIZONTAL)
         self.slider.grid(row=1, column=0, sticky='ewn')
         
         try:
@@ -150,7 +160,7 @@ class MainWindow(tk.Frame):
         except:
             self.next_action()
             
-        self.slice_cnt.set(str(self.imager.index+1)+"/"+str(self.imager.get_slice_cnt()))
+        self.slice_cnt.set(str(int(self.imager.index)+1)+"/"+str(self.imager.get_slice_cnt()))
         self.show_segmented_image(self.imager.get_current_image())
         
     def compute_compliance_action(self):  # Function called when Calculate EF BT is pressed
@@ -158,35 +168,41 @@ class MainWindow(tk.Frame):
         if not self.split_quarters_status.get():
             plot = figure.add_subplot(111)
             plot.plot(self.imager.area, color="blue")
-            plot.set_xlabel('Frame')
+            plot.set_ylim(np.min(self.imager.area)-200, np.max(self.imager.area)+200)
+            plot.set_xlabel('Slice')
             plot.set_xlabel('Area (mm^2)')
         else:
+            offset = 20
             plot = figure.add_subplot(411)
             plot.plot(self.imager.areaquart[:,0], color="red", label="Posterior")
             plot.legend(loc="upper right")
+            plot.set_ylim(np.min(self.imager.areaquart[:,0])-offset, np.max(self.imager.areaquart[:,0])+offset)
             plot.axes.get_xaxis().set_visible(False)
 
             plot = figure.add_subplot(412)
             plot.plot(self.imager.areaquart[:,1], color="green", label="Lateral")
             plot.legend(loc="upper right")
+            plot.set_ylim(np.min(self.imager.areaquart[:,1])-offset, np.max(self.imager.areaquart[:,1])+offset)
             plot.axes.get_xaxis().set_visible(False)
 
             plot = figure.add_subplot(413)
             plot.plot(self.imager.areaquart[:,2], color="blue", label="Anterior")
             plot.legend(loc="upper right")
+            plot.set_ylim(np.min(self.imager.areaquart[:,2])-offset, np.max(self.imager.areaquart[:,2])+offset)
             plot.axes.get_xaxis().set_visible(False)
 
             plot = figure.add_subplot(414)
             plot.plot(self.imager.areaquart[:,3], color="yellow", label="Medial")
+            plot.set_ylim(np.min(self.imager.areaquart[:,3])-offset, np.max(self.imager.areaquart[:,3])+offset)
             plot.legend(loc="upper right")
 
-            plot.set_xlabel('Frame')
+            plot.set_xlabel('Slice')
             plot = figure.add_subplot(111, frameon=False)
             plot.set_ylabel('Area (mm^2)', labelpad=20)
             plot.tick_params(axis='both', labelsize=0 ,length=0)
             
         
-        FigureCanvasTkAgg(figure, self.parent).get_tk_widget().grid(row=0, column=1, sticky=tk.N)
+        FigureCanvasTkAgg(figure, self.parent).get_tk_widget().grid(row=0, column=1, sticky=N)
         
         areas = self.imager.area
         min_area = np.min(areas[np.nonzero(areas)])
@@ -207,7 +223,7 @@ class MainWindow(tk.Frame):
             self.result.set(f"Global compliance: {self.compliance[0]:.4f}")
         else:
             self.result.set(f"Global compliance: {self.compliance[0]:.4f}\nPosterior: {self.compliance[1]:.4f}\nLateral: {self.compliance[2]:.4f}\nAnterior: {self.compliance[3]:.4f}\nMedial: {self.compliance[4]:.4f}")
-        self.result_label.grid(row=0, column=1, sticky=tk.S)
+        self.result_label.grid(row=0, column=1, sticky='s')
 
     def show_contours_action(self): # Checker tickbox
         self.imager.contours(self.show_contours_status.get())
@@ -219,29 +235,45 @@ class MainWindow(tk.Frame):
         
     def segment_action(self):    # Function called when Apply SegNet BT is pressed
         self.parent.config(cursor="wait")
+        self.progress_bar = Progressbar(self.parent, orient=HORIZONTAL, length=self.imager.get_slice_cnt(), mode='determinate')
+        self.progress_bar.grid(row=1, column=0, sticky='sew', padx=(250, 50), ipady=5)
+        self.progress_bar_status = StatusBar(self.parent)
+        self.progress_bar_status.grid(row=1, column=0, sticky='se', padx=(50, 0))
         self.parent.update()
         self.status.set("Segmenting Aorta...")
-        self.vol_seg = self.imager.segmentation(self.model.get_segmentation(self.volume))
+        
+        predictions = np.zeros((self.volume.shape[0], self.volume.shape[1], self.volume.shape[2]))
+        for i in range(self.volume.shape[0]):
+            self.parent.update_idletasks()
+            predictions[i,:,:] = self.model.get_segmentation(self.volume[i,:,:,:])
+            self.progress_bar_status.set(str(i+1) + "/" + str(self.imager.get_slice_cnt()))
+            self.progress_bar['value'] = (i+1) * (100 / self.imager.get_slice_cnt())
+            # self.progress_bar.grid(row=1, column=0, sticky='SEW', padx=250, ipady=5)
+        
+        if hasattr(self, 'progress_bar'): self.progress_bar.grid_remove()
+        if hasattr(self, 'progress_bar_status'): self.progress_bar_status.grid_remove()
+        
+        self.vol_seg = self.imager.segmentation(predictions)
         self.imager.contours(self.show_contours_status.get())
         self.show_image(self.imager.get_current_image())
         self.compute_compliance_btn.grid(row=1, column=1)
 
-        self.systolic_pressure_entry.grid(row=1, column=1, sticky=(tk.W), ipadx=5, padx=150)
-        self.systolic_pressure_label.grid(row=1, column=1, sticky=(tk.W))
-        self.diastolic_pressure_entry.grid(row=1,column=1,sticky=(tk.SW), ipadx=5, pady=125, padx=150)
-        self.diastolic_pressure_label.grid(row=1, column=1, sticky=(tk.SW), pady=125)
+        self.systolic_pressure_entry.grid(row=1, column=1, sticky=('w'), ipadx=5, padx=150)
+        self.systolic_pressure_label.grid(row=1, column=1, sticky=('w'))
+        self.diastolic_pressure_entry.grid(row=1,column=1,sticky=('sw'), ipadx=5, pady=125, padx=150)
+        self.diastolic_pressure_label.grid(row=1, column=1, sticky=('sw'), pady=125)
 
         self.status.set("Segmentation Done!")
-        FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky=tk.N)
-#        self.manual_segmentation_btn.grid(row=1, column=2, sticky=(tk.N))
-        self.del_sel = tk.Button(self.parent, text="Delete selected", command=self.delete_selected)
-        self.listbox = tk.Listbox(self.parent)
+        FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
+#        self.manual_segmentation_btn.grid(row=1, column=2, sticky=(N))
+        self.del_sel = Button(self.parent, text="Delete selected", command=self.delete_selected)
+        self.listbox = Listbox(self.parent)
         
         self.show_contours_checkbtn.grid(row=1, column=1, sticky="sw", pady=50, padx=50)        
         self.convex_hull_checkbtn.grid(row=1, column=1, sticky="s", pady=50, padx=50)        
         self.cog_checkbtn.grid(row=1, column=1, sticky="s", pady=0, padx=50)        
         self.split_quarters_checkbtn.grid(row=1, column=1, sticky="se", pady=50, padx=50)
-        self.remove_slice_segmentation_btn.grid(row=1, column=0, sticky=tk.N, pady=100)
+        self.delete_slice_btn.grid(row=1, column=0, sticky='n', pady=100)
         
         self.parent.config(cursor="")
         
@@ -256,7 +288,7 @@ class MainWindow(tk.Frame):
         self.show_image(self.imager.get_current_image())
 
     def delete_selected(self):
-        self.listbox.delete(tk.ANCHOR)
+        self.listbox.delete('anchor')
         self.show_segmented_image(self.imager.get_current_image())
         
     def show_segmented_image(self, numpy_array):
@@ -291,9 +323,9 @@ class MainWindow(tk.Frame):
         self.imager.quarters(0)
         self.convex_hull_status.set(False)
         self.show_segmented_image(self.imager.get_current_image())
-        self.del_sel.grid(row=0, column=2, sticky=(tk.N), pady=50)
-        self.listbox.grid(row=0, column=2, sticky=(tk.N), pady=100)
-        self.manual_segmentation_end_btn.grid(row=0, column=1, sticky=(tk.S))
+        self.del_sel.grid(row=0, column=2, sticky=('n'), pady=50)
+        self.listbox.grid(row=0, column=2, sticky=('n'), pady=100)
+        self.manual_segmentation_end_btn.grid(row=0, column=1, sticky=('s'))
     
     def listbox_sel(self, event):
         self.show_segmented_image(self.imager.get_current_image())
@@ -324,15 +356,15 @@ class MainWindow(tk.Frame):
     def get_coords(self, event):
         x_coord = self.canvas.canvasx(event.x)/self.imscale
         y_coord = self.canvas.canvasy(event.y)/self.imscale
-        self.listbox.insert(tk.END, [round(x_coord, 2), round(y_coord,2)])
+        self.listbox.insert(END, [round(x_coord, 2), round(y_coord,2)])
         self.show_segmented_image(self.imager.get_current_image()) 
 
     def init_toolbar(self):     # Creating the MENU
         # Top level menu
-        menubar = tk.Menu(self.parent, bd=0)
+        menubar = Menu(self.parent, bd=0)
         self.parent.config(menu=menubar, bd=0)
         # "File" menu
-        filemenu = tk.Menu(menubar, tearoff=False, bd=0)  # tearoff False removes the dashed line
+        filemenu = Menu(menubar, tearoff=False, bd=0)  # tearoff False removes the dashed line
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Open DICOM Sequence", command=self.on_load_dicom)
         # Rest of the "File" menu
@@ -359,7 +391,7 @@ class MainWindow(tk.Frame):
         self.canvas.lower(self.image_id)
         self.canvas.imagetk = self.image  # keep an extra reference to prev_btnent garbage-collection
 
-        self.slice_cnt.set(str(self.imager.index+1)+"/"+str(self.imager.get_slice_cnt()))
+        self.slice_cnt.set(str(int(self.imager.index)+1)+"/"+str(self.imager.get_slice_cnt()))
 
     def previous_action(self): # If left key pressed
         move = -1
@@ -396,7 +428,7 @@ class MainWindow(tk.Frame):
     
     def clear_window(self):
         if self.imager is not None:
-            FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky=tk.N)
+            FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
         
         self.show_contours_status.set(False)
         self.split_quarters_status.set(False)
@@ -415,12 +447,14 @@ class MainWindow(tk.Frame):
         if hasattr(self, 'split_quarters_btn'): self.split_quarters_btn.grid_remove()
         if hasattr(self, 'show_contours_checkbtn'): self.show_contours_checkbtn.grid_remove() 
         if hasattr(self, 'split_quarters_checkbtn'): self.split_quarters_checkbtn.grid_remove()
-        if hasattr(self, 'remove_slice_segmentation_btn'): self.remove_slice_segmentation_btn.grid_remove()
+        if hasattr(self, 'delete_slice_btn'): self.delete_slice_btn.grid_remove()
         if hasattr(self, 'result_label'): self.result_label.grid_remove()
         if hasattr(self, 'systolic_pressure_label'): self.systolic_pressure_label.grid_remove()
         if hasattr(self, 'systolic_pressure_entry'): self.systolic_pressure_entry.grid_remove()
         if hasattr(self, 'diastolic_pressure_label'): self.diastolic_pressure_label.grid_remove()
         if hasattr(self, 'diastolic_pressure_entry'): self.diastolic_pressure_entry.grid_remove()
+        if hasattr(self, 'progress_bar'): self.progress_bar.grid_remove()
+        if hasattr(self, 'progress_bar_status'): self.progress_bar_status.grid_remove()
         
     def on_load_dicom(self): # When Open Systolic Volume in the menu is selected
         filename = askdirectory()
@@ -428,11 +462,11 @@ class MainWindow(tk.Frame):
         datasets = self.load_dicom(filename) # Read the nifti file in the same
         # way as in the colab code. IMPORTANT only 3d nifti. We should add a checker and update the
         # status bar    
-        self.volume = datasets[0]     # Store the volume
+        self.volume = np.array(datasets[0])     # Store the volume
         self.imager = Imager(datasets) # Pass the volume to the imager function
         self.status.set("Opened DICOM files")
-        self.slice_cnt.grid(row=1, column=0, sticky=tk.N, pady=50)
-        self.canvas = tk.Canvas(self.parent, highlightthickness=0, width=self.parent.winfo_screenwidth()/2)
+        self.slice_cnt.grid(row=1, column=0, sticky='n', pady=50)
+        self.canvas = Canvas(self.parent, highlightthickness=0, width=self.parent.winfo_screenwidth()/2)
         self.canvas.grid(row=0, column=0, sticky='nswe')
 
         self.canvas.bind('<ButtonPress-1>', self.move_from)
@@ -443,11 +477,11 @@ class MainWindow(tk.Frame):
         self.delta = 1.3     
         
         self.segment_btn.grid(row=1, column=0, sticky=None)
-        self.prev_btn.grid(row=1, column=0, sticky=tk.NW, pady=50)
-        self.next_btn.grid(row=1, column=0, sticky=tk.NE, pady=50)
+        self.prev_btn.grid(row=1, column=0, sticky=NW, pady=50)
+        self.next_btn.grid(row=1, column=0, sticky=NE, pady=50)
         self.show_image(self.imager.get_current_image())
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
-        self.slider = tk.Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient=tk.HORIZONTAL)
+        self.slider = Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient='horizontal')
         self.slider.grid(row=1, column=0, sticky='ewn')
         
 #        FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1)
@@ -487,7 +521,7 @@ class MainWindow(tk.Frame):
         
 # Main definition of the program
 def main():
-    root = tk.Tk() # Create GUI object
+    root = Tk() # Create GUI object
     root.state('zoomed')
     # w, h = root.winfo_screenwidth(), root.winfo_screenheight()
     # root.minsize(600, 400)  # Define min size of the window
