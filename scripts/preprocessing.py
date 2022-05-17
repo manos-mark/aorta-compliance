@@ -237,7 +237,7 @@ def resize(image, W=512, H=512, display=False):
     return x
 
 
-def crop_and_pad(img, cropy, cropx, display=True):
+def crop_and_pad(img, cropy, cropx, display=False):
     h, w = img.shape
     starty = startx = 0
     # print('Input: ',img.shape)
@@ -314,6 +314,46 @@ def normalize(image, display=False):
     
     return x
 
+def add_gaussian_noise(image, display=True):
+    waves_image_path = os.path.join('..', 'dataset', 'waves.jpg')
+    waves_image = cv2.imread(waves_image_path, cv2.IMREAD_GRAYSCALE)
+    waves_image = normalize(waves_image)
+    
+    row, col = image.shape
+    waves_image = cv2.resize(waves_image, dsize=(col//2,row//2), interpolation=cv2.INTER_CUBIC)
+    waves_image = np.concatenate((waves_image, waves_image), axis=0)
+    waves_image = np.concatenate((waves_image, waves_image), axis=1)
+    waves_image = crop_and_pad(waves_image, row, col)
+    
+    mu, noise_ratios = 0, [0, 0.03, 0.09, 0.11] 
+    waves_ratios = [0, 0.2, 0.4, 0.6]
+    processed_imgs = []
+    
+    for i, s in enumerate(noise_ratios):
+        noisy_image = image + np.random.normal(mu, s, (row,col)) 
+        noisy_img_clipped = np.clip(noisy_image, 0, 255)  # we might get out of bounds due to noise
+        
+        temp_row = []
+        for j, a in enumerate(waves_ratios):
+            processed_image = (noisy_img_clipped * 1-a) + (waves_image * a)
+            np.save(image)
+            temp_row.append(processed_image)
+            
+        processed_imgs.append(temp_row)
+            
+        
+    if display:
+        f, subplots = plt.subplots(4, 4)
+        for i, s in enumerate(noise_ratios):
+            for j, a in enumerate(waves_ratios):
+                subplots[i,j].imshow(processed_imgs[i][j], cmap='gray')
+                subplots[i,j].set_title(f'Gn:{s}, W:{a}', fontsize=8)
+                subplots[i,j].axis('off')
+            # plt.tight_layout()
+            plt.show()  
+          
+    return processed_imgs
+
 
 def limiting_filter(img, threshold=8, display=False):
     ret1, th1 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
@@ -385,9 +425,10 @@ if __name__ == "__main__":
     # rand_images = [bm3d_denoising(i) for i in rand_images]
     # rand_images = [limiting_filter(i) for i in rand_images]
     rand_images = [normalize(i) for i in rand_images]
-    rand_images = [contrast_stretching(i) for i in rand_images]
-    # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
-    rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
+    rand_images = [add_gaussian_noise(i) for i in rand_images]
+    # rand_images = [contrast_stretching(i) for i in rand_images]
+    # # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+    # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
 
     # reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
     # reference_img = crop_and_pad(reference_img, 256, 256)

@@ -13,10 +13,10 @@ from skimage.draw import polygon2mask
 
 
 # DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented') 
-# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
-DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'marfan_segmented') 
-DICOMS_PATH = os.path.join('..', 'dataset', 'images') 
-MASKS_PATH = os.path.join('..', 'dataset', 'masks') 
+DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented') 
+# DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'marfan_segmented') 
+DICOMS_PATH = os.path.join('..', 'dataset', 'raw_images') 
+MASKS_PATH = os.path.join('..', 'dataset', 'raw_masks') 
 
 
 def create_dir(path):
