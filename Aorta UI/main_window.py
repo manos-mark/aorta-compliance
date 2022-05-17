@@ -14,6 +14,8 @@ from tkinter import *
 from tkinter.ttk import *
 import re
 import copy
+import cv2
+from interpolation_functions import interpolate
 
 class StatusBar(Frame):
     height = 19
@@ -164,13 +166,13 @@ class MainWindow(Frame):
         self.show_segmented_image(self.imager.get_current_image())
         
     def compute_compliance_action(self):  # Function called when Calculate EF BT is pressed
-        figure = plt.Figure(figsize=(8,8))
+        figure = plt.Figure(figsize=(6,6))
         if not self.split_quarters_status.get():
             plot = figure.add_subplot(111)
             plot.plot(self.imager.area, color="blue")
             plot.set_ylim(np.min(self.imager.area)-200, np.max(self.imager.area)+200)
             plot.set_xlabel('Slice')
-            plot.set_xlabel('Area (mm^2)')
+            plot.set_ylabel('Area (mm^2)')
         else:
             offset = 20
             plot = figure.add_subplot(411)
@@ -201,7 +203,7 @@ class MainWindow(Frame):
             plot.set_ylabel('Area (mm^2)', labelpad=20)
             plot.tick_params(axis='both', labelsize=0 ,length=0)
             
-        
+        self.figure = figure
         FigureCanvasTkAgg(figure, self.parent).get_tk_widget().grid(row=0, column=1, sticky=N)
         
         areas = self.imager.area
@@ -220,9 +222,9 @@ class MainWindow(Frame):
             # self.compliance[4] = (self.imager.areaquart[:,3].max() - self.imager.areaquart[:,3].min()) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
 
         if not self.split_quarters_status.get():
-            self.result.set(f"Global compliance: {self.compliance[0]:.4f}")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} ")
         else:
-            self.result.set(f"Global compliance: {self.compliance[0]:.4f}\nPosterior: {self.compliance[1]:.4f}\nLateral: {self.compliance[2]:.4f}\nAnterior: {self.compliance[3]:.4f}\nMedial: {self.compliance[4]:.4f}")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f}")
         self.result_label.grid(row=0, column=1, sticky='s')
 
     def show_contours_action(self): # Checker tickbox
@@ -234,21 +236,30 @@ class MainWindow(Frame):
         self.show_image(self.imager.get_current_image())              
         
     def segment_action(self):    # Function called when Apply SegNet BT is pressed
-        self.parent.config(cursor="wait")
         self.progress_bar = Progressbar(self.parent, orient=HORIZONTAL, length=self.imager.get_slice_cnt(), mode='determinate')
         self.progress_bar.grid(row=1, column=0, sticky='sew', padx=(250, 50), ipady=5)
         self.progress_bar_status = StatusBar(self.parent)
         self.progress_bar_status.grid(row=1, column=0, sticky='se', padx=(50, 0))
-        self.parent.update()
         self.status.set("Segmenting Aorta...")
         
-        predictions = np.zeros((self.volume.shape[0], self.volume.shape[1], self.volume.shape[2]))
+        predictions = np.zeros((self.volume.shape[0], self.volume.shape[1], self.volume.shape[2]), dtype=np.float32)
+        # interpolated_predictions = np.zeros((self.volume.shape[0], self.volume.shape[1], self.volume.shape[2]), dtype=np.float32)
         for i in range(self.volume.shape[0]):
-            self.parent.update_idletasks()
+            self.parent.config(cursor="wait")
+            self.parent.update()
             predictions[i,:,:] = self.model.get_segmentation(self.volume[i,:,:,:])
+            
             self.progress_bar_status.set(str(i+1) + "/" + str(self.imager.get_slice_cnt()))
             self.progress_bar['value'] = (i+1) * (100 / self.imager.get_slice_cnt())
-            # self.progress_bar.grid(row=1, column=0, sticky='SEW', padx=250, ipady=5)
+            
+            # if (i == 0) or (i == self.volume.shape[0]-1):
+            #     interpolated_predictions[i,:,:] = predictions[i,:,:]
+            #     continue
+            # else:
+            #     interpolated_predictions[i,:,:] = interpolate(predictions[i-1,:,:], predictions[i+1,:,:], 1)
+            #     print(f"i:{i}, mask shape: {interpolated_predictions[i,:,:].shape, interpolated_predictions[i,:,:].dtype}")
+            #     # cv2.imshow("Mask interpolated", interpolated_predictions[i,:,:])
+            #     # cv2.waitKey(0)
         
         if hasattr(self, 'progress_bar'): self.progress_bar.grid_remove()
         if hasattr(self, 'progress_bar_status'): self.progress_bar_status.grid_remove()
@@ -256,26 +267,27 @@ class MainWindow(Frame):
         self.vol_seg = self.imager.segmentation(predictions)
         self.imager.contours(self.show_contours_status.get())
         self.show_image(self.imager.get_current_image())
-        self.compute_compliance_btn.grid(row=1, column=1)
+        self.compute_compliance_btn.grid(row=1, column=1, sticky="n")
 
-        self.systolic_pressure_entry.grid(row=1, column=1, sticky=('w'), ipadx=5, padx=150)
-        self.systolic_pressure_label.grid(row=1, column=1, sticky=('w'))
-        self.diastolic_pressure_entry.grid(row=1,column=1,sticky=('sw'), ipadx=5, pady=125, padx=150)
-        self.diastolic_pressure_label.grid(row=1, column=1, sticky=('sw'), pady=125)
+        self.systolic_pressure_entry.grid(row=1, column=1, sticky=('sw'), ipadx=5, padx=150)
+        self.systolic_pressure_label.grid(row=1, column=1, sticky=('sw'))
+        self.diastolic_pressure_entry.grid(row=1,column=1,sticky=('se'), ipadx=5)
+        self.diastolic_pressure_label.grid(row=1, column=1, sticky=('se'), padx=50)
 
         self.status.set("Segmentation Done!")
-        FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
-#        self.manual_segmentation_btn.grid(row=1, column=2, sticky=(N))
+        FigureCanvasTkAgg(plt.Figure(figsize=(6,6)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
+        self.manual_segmentation_btn.grid(row=1, column=2, sticky=(N))
         self.del_sel = Button(self.parent, text="Delete selected", command=self.delete_selected)
         self.listbox = Listbox(self.parent)
         
         self.show_contours_checkbtn.grid(row=1, column=1, sticky="sw", pady=50, padx=50)        
         self.convex_hull_checkbtn.grid(row=1, column=1, sticky="s", pady=50, padx=50)        
-        self.cog_checkbtn.grid(row=1, column=1, sticky="s", pady=0, padx=50)        
+        # self.cog_checkbtn.grid(row=1, column=1, sticky="s", pady=0, padx=50)        
         self.split_quarters_checkbtn.grid(row=1, column=1, sticky="se", pady=50, padx=50)
-        self.delete_slice_btn.grid(row=1, column=0, sticky='n', pady=100)
+        self.delete_slice_btn.grid(row=1, column=0, sticky='s', pady=25)
         
         self.parent.config(cursor="")
+        
         
     def cog_action(self): # Checker tickbox
         copy_seg = copy.deepcopy(self.vol_seg)
@@ -317,7 +329,7 @@ class MainWindow(Frame):
         self.canvas.unbind('<B1-Motion>')
         self.canvas.bind('<Button-1>', self.get_coords)
         self.listbox.bind("<<ListboxSelect>>", self.listbox_sel)
-        self.imager.del_curr_seg()
+        self.imager.clear_curr_seg()
         self.split_quarters_status.set(False)
 
         self.imager.quarters(0)
@@ -325,7 +337,7 @@ class MainWindow(Frame):
         self.show_segmented_image(self.imager.get_current_image())
         self.del_sel.grid(row=0, column=2, sticky=('n'), pady=50)
         self.listbox.grid(row=0, column=2, sticky=('n'), pady=100)
-        self.manual_segmentation_end_btn.grid(row=0, column=1, sticky=('s'))
+        self.manual_segmentation_end_btn.grid(row=0, column=2, sticky=('s'))
     
     def listbox_sel(self, event):
         self.show_segmented_image(self.imager.get_current_image())
@@ -338,16 +350,40 @@ class MainWindow(Frame):
 
         for i in range (self.listbox.size()):
             coords.append(tuple((self.listbox.get(i))))
-
-        maskIm = PIL.Image.new('1', (self.imager.get_current_image().shape[1], self.imager.get_current_image().shape[0]))
-        PIL.ImageDraw.Draw(maskIm).polygon(coords, outline=1, fill=1)
-        maskIm = np.array(maskIm)
-        self.imager.update_seg(maskIm)
-        self.vol_seg = copy.deepcopy(self.imager.get_segmentation())
-        self.listbox.delete(0, 'end')
-        self.canvas.delete("all")
-        self.show_image(self.imager.get_current_image())
-        self.compute_compliance_action()
+        
+        if len(coords) >= 3:
+            width, height = self.imager.get_current_image().shape[1], self.imager.get_current_image().shape[0]
+            maskIm = PIL.Image.new('1', (width, height))
+            PIL.ImageDraw.Draw(maskIm).polygon(coords, outline=1, fill=1)
+            maskIm = maskIm.resize((width, height), resample=PIL.Image.ANTIALIAS)
+            maskIm = np.array(maskIm)
+            # print(type(maskIm), maskIm.shape, maskIm.max())
+            
+            # img = np.zeros((height, width, 3), dtype=np.uint8)
+            # points = np.array(coords, dtype=np.int32)
+            # points = points.reshape((-1, 1, 2))
+            # import cv2
+            # cv2.fillPoly(img, [points], (0,0,255), cv2.LINE_AA)
+            # # cv2.polylines(img, [points], True, (0,0,255), 1, cv2.LINE_AA)
+            # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # (thresh, img_binary) = cv2.threshold(img_gray, 1, 255, cv2.THRESH_BINARY)
+            # img_binary = np.where(img_binary>0, True, False)
+            # # cv2.imshow("Image. Binary", img_binary)
+            # # cv2.waitKey(0) 
+            # print(img_binary.shape, img_binary.max())
+            
+            self.imager.update_seg(maskIm)
+            self.vol_seg = copy.deepcopy(self.imager.get_segmentation())
+            self.listbox.delete(0, 'end')
+            self.canvas.delete("all")
+            self.show_image(self.imager.get_current_image())
+            self.compute_compliance_action()
+        else:
+            self.listbox.delete(0, 'end')
+            self.canvas.delete("all")
+            self.imager.reset_curr_seg()
+            self.show_segmented_image(self.imager.get_current_image())
+        
         self.listbox.unbind('<<ListboxSelect>>')
         self.canvas.unbind('<Button-1>')
         self.canvas.bind('<ButtonPress-1>', self.move_from)
@@ -428,7 +464,7 @@ class MainWindow(Frame):
     
     def clear_window(self):
         if self.imager is not None:
-            FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
+            FigureCanvasTkAgg(plt.Figure(figsize=(6,6)), self.parent).get_tk_widget().grid(row=0, column=1, sticky='n')
         
         self.show_contours_status.set(False)
         self.split_quarters_status.set(False)
@@ -484,7 +520,6 @@ class MainWindow(Frame):
         self.slider = Scale(self.parent, from_=1, to=self.imager.get_slice_cnt(), command=self.update_index, orient='horizontal')
         self.slider.grid(row=1, column=0, sticky='ewn')
         
-#        FigureCanvasTkAgg(plt.Figure(figsize=(8,8)), self.parent).get_tk_widget().grid(row=0, column=1)
     
     def update_index(self, event):
         self.imager.index = self.slider.get()-1 # In any other case, hange the index accordingly
@@ -509,11 +544,15 @@ class MainWindow(Frame):
             #image.to_filename(os.path.join(filename, name))
             nib.save(image,os.path.join(filename, name))
             self.status.set("Segmentations saved")
-            f = open(os.path.join(filename, self.filename + '_results.txt'), "w")
-            f.write(self.result.get())
-            f.close()
+
             df = pd.DataFrame(np.concatenate((self.imager.areaquart, np.reshape(self.imager.area, self.imager.area.shape+(1,))),axis=1), columns=['Posterior', 'Lateral', 'Anterior', 'Medial', 'Global'])
             df.to_csv(os.path.join(filename, self.filename + '_compliance_curves.csv'), index=False, header=True)
+            
+            data = np.array([ [self.compliance[0]], [self.compliance[1]], [self.compliance[2]], [self.compliance[3]], [self.compliance[4]], [self.imager.area.min()], [self.imager.area.max()], [self.imager.perimeters.min()], [self.imager.perimeters.max()], [self.imager.perimeters.mean()] ]).T
+            df = pd.DataFrame(data, columns=['compliance_pred', 'posterior', 'lateral', 'anterior', 'medial', 'min_area_pred', 'max_area_pred', 'min_perimeter', 'max_perimeter', 'mean_perimeter' ])
+            df.to_csv(os.path.join(filename, self.filename + '_results.csv'), index=False, header=True)
+            
+            self.figure.savefig(os.path.join(filename, self.filename + '_figure.png'))
             
     def on_exit(self):  # Close the UI
         self.parent.destroy()
