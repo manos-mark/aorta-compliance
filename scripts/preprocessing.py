@@ -121,13 +121,20 @@ def contrast_stretching(image, display=False):
     img_rescale = exposure.rescale_intensity(image, in_range=(p2, p98))
     
     if display:
-        plt.figure()
-        plt.subplot(131, title='before stretching')
+        plt.figure(1)
+        plt.subplot(121, title='before stretching')
         plt.imshow(image, cmap='gray')
-        plt.subplot(132, title='after stretching')
+        plt.subplot(122, title='after stretching')
         plt.imshow(img_rescale, cmap='gray')
-        # plt.subplot(133, title='resizing to original')
-        # plt.imshow(resizing_func(x, image.shape[0], image.shape[1]), cmap='gray')
+        plt.tight_layout()
+        plt.show()
+        
+        plt.figure(2)
+        plt.subplot(121, title='before stretching')
+        plt.hist(image)
+        plt.subplot(122, title='after stretching')
+        plt.hist(img_rescale)
+        plt.tight_layout()
         plt.show()
         
     return img_rescale
@@ -230,7 +237,7 @@ def resize(image, W=512, H=512, display=False):
     return x
 
 
-def crop_and_pad(img, cropy, cropx, display=False):
+def crop_and_pad(img, cropy, cropx, display=True):
     h, w = img.shape
     starty = startx = 0
     # print('Input: ',img.shape)
@@ -274,9 +281,9 @@ def crop_and_pad(img, cropy, cropx, display=False):
         
     if display:
         plt.figure()
-        plt.subplot(131, title='before cropping')
+        plt.subplot(121, title='before crop & pad')
         plt.imshow(img, cmap='gray')
-        plt.subplot(132, title='after cropping')
+        plt.subplot(122, title='after crop & pad')
         plt.imshow(result, cmap='gray')
         # plt.subplot(133, title='resizing to original')
         # plt.imshow(resizing_func(x, image.shape[0], image.shape[1]), cmap='gray')
@@ -285,7 +292,7 @@ def crop_and_pad(img, cropy, cropx, display=False):
     return result
 
 
-def normalize(image):
+def normalize(image, display=False):
 #    x = (image - image.mean()) / image.std()
 #    x = image/np.max(image)
     x = (image - np.min(image)) / (np.max(image) - np.min(image))
@@ -293,6 +300,17 @@ def normalize(image):
 #    import scipy
 #    x = scipy.stats.zscore(image)
     x = x.astype(np.float32)
+    
+    if display:
+        plt.figure(0)
+        plt.subplot(121, title='before normalization')
+        plt.hist(image)
+        plt.subplot(122, title='after normalization')
+        plt.hist(x)
+        # plt.subplot(133, title='resizing to original')
+        # plt.imshow(resizing_func(x, image.shape[0], image.shape[1]), cmap='gray')
+        plt.tight_layout()
+        plt.show()
     
     return x
 
@@ -358,17 +376,18 @@ if __name__ == "__main__":
     random.shuffle(images)
     
     rand_images = []
-    for j in range(20):
+    for j in range(10):
         rand = random.randint(0, len(images)-1)
-        rand_images.append(images[rand])
+        rand_images.append(images[j])
         
 #    rand_images = [n4_bias_field_correction(i) for i in rand_images]
-    # rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
     
     # rand_images = [bm3d_denoising(i) for i in rand_images]
     # rand_images = [limiting_filter(i) for i in rand_images]
-    # rand_images = [contrast_stretching(i) for i in rand_images]
-    rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+    rand_images = [normalize(i) for i in rand_images]
+    rand_images = [contrast_stretching(i) for i in rand_images]
+    # rand_images = [equalize_histogram(i, display=True) for i in rand_images]
+    rand_images = [crop_and_pad(i, 256, 256) for i in rand_images]
 
     # reference_img = (pydicom.dcmread('../dataset/images/000000359340_BOIVIN FRANCK_31_0007.dcm')).pixel_array
     # reference_img = crop_and_pad(reference_img, 256, 256)
@@ -380,7 +399,6 @@ if __name__ == "__main__":
 
     # train_irs_model(images, 'irs_model.pkl')
     # rand_images = [intensity_range_standardization(i, 'irs_model.pkl', False) for i in rand_images]
-#    rand_images = [normalize(i) for i in rand_images]
     
     # image_after = images[rand]
     # mask = masks[rand]
