@@ -27,7 +27,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "res_unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-Kfield"
+EXPERIMENT = "unet-diana_healthy_marfan-lr_0.001-batch_8-augmented_noisy_waves-Kfield"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     create_dir("output")
 
     """ Hyperparameters """
-    batch_size = 4
+    batch_size = 8
     lr = 1e-3
     num_epochs = 200
 

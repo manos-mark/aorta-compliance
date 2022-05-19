@@ -65,7 +65,7 @@ if __name__ == "__main__":
     IMAGES_PATH = natsorted(os.listdir(os.path.join('..', 'dataset', 'raw_images')))
     MASKS_PATH = natsorted(os.listdir(os.path.join('..', 'dataset', 'raw_masks')))
     
-    for image_path, mask_path in tqdm(zip(IMAGES_PATH, MASKS_PATH)):
+    for image_path, mask_path in tqdm(zip(IMAGES_PATH, MASKS_PATH), total=len(IMAGES_PATH)):
         image = (pydicom.read_file(os.path.join('..', 'dataset', 'raw_images') + os.sep + image_path)).pixel_array
         mask = cv2.imread(os.path.join('..', 'dataset', 'raw_masks') + os.sep + mask_path, cv2.IMREAD_GRAYSCALE)
         
