@@ -28,7 +28,7 @@ from utils import *
 """ Global parameters """
 H = 256
 W = 256
-EXPERIMENT = "unet-diana_healthy_marfan-lr_0.001-batch_1-augmented_noisy_waves"
+EXPERIMENT = "unet-diana_healthy_marfan-lr_0.001-batch_1-augmented"
 
 if __name__ == "__main__":
     print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
@@ -48,15 +48,15 @@ if __name__ == "__main__":
     """ Dataset """
     dataset_path = os.path.join('..', 'dataset')
     
-    # (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path, split=0.2)
-    (train_x, train_y), (test_x, test_y) = load_data(dataset_path)
+    (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_path, split=0.2)
+    # (train_x, train_y), (test_x, test_y) = load_data(dataset_path)
     
     print(f"Train: {len(train_x)} - {len(train_y)}")
-    # print(f"Valid: {len(valid_x)} - {len(valid_y)}")
+    print(f"Valid: {len(valid_x)} - {len(valid_y)}")
     print(f"Test: {len(test_x)} - {len(test_y)}")
     
     train_dataset = tf_dataset(train_x, train_y, batch=batch_size, augment=True)
-    # valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
+    valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size, augment=False)
 
     """ Model """
     # model = models.unet_2d((128, 128, 3), [64, 128, 256, 512, 1024], n_labels=1,
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     model.fit(
         train_dataset,
         epochs=num_epochs,
-        # validation_data=valid_dataset,
+        validation_data=valid_dataset,
         callbacks=callbacks
     )
     
