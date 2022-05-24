@@ -24,7 +24,8 @@ class Imager:
         self.area = np.zeros(shape=(self.size[0])) # Attribute to store volume of the segmentation
         self.areaquart = np.zeros(shape=(self.size[0],4))
         self.center = np.zeros(shape=(self.size[0],2))
-        self.perimeters = np.zeros(self.size[0])
+        self.global_perimeters = np.zeros(self.size[0])
+        self.local_perimeters = np.zeros(shape=(self.size[0],4))
         
     def segmentation(self, volume, convex_hull=False, cog=False):
         if cog:
@@ -51,10 +52,10 @@ class Imager:
         for i in range(self.size[0]):
             #self.area[i] = np.sum(convex_hull_image(self._segmentation[i,:,:]==1))*self.spacing[0]*self.spacing[1]
             self.area[i] = np.sum(self._segmentation[i,:,:]==1)*self.spacing[0]*self.spacing[1]
+            self.global_perimeters[i] = np.count_nonzero(find_boundaries((self._segmentation[i,:,:]==1), mode='inner'))*self.spacing[0]*self.spacing[1]
+            self.calculate_local_perimeters(i)
         
         for i in range(self.size[0]):
-            self.perimeters[i] = np.count_nonzero(find_boundaries((self._segmentation[i,:,:]==1), mode='inner'))
-            
             y0, x0 = self.center[i,:]
             y_coords, x_coords = np.where((self._segmentation[i,:,:]==1))
             coords = np.zeros((len(x_coords),2))
@@ -74,19 +75,66 @@ class Imager:
             # q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
             # q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/6]).astype(int)))
             
-            q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<5/6*pi]).astype(int)
-            q2 = np.array([coords[i,:] for i in range(len(coords)) if 5/6*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<=pi]).astype(int)
-            q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-2/3*pi]).astype(int)))                  
-            q3 = np.array([coords[i,:] for i in range(len(coords)) if -2/3*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/6]).astype(int)
-            q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/6<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
-            q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/3]).astype(int)))
+            try:
+                q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<5/6*pi]).astype(int)
+                q2 = np.array([coords[i,:] for i in range(len(coords)) if 5/6*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<=pi]).astype(int)
+                q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-2/3*pi]).astype(int)))                  
+                q3 = np.array([coords[i,:] for i in range(len(coords)) if -2/3*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/6]).astype(int)
+                q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/6<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
+                q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/3]).astype(int)))
+            except:
+                q1 = q2 = q3 = q4 = 0
             
-            self.areaquart[i,0] = len(q1)*self.spacing[0]*self.spacing[1]
-            self.areaquart[i,1] = len(q2)*self.spacing[0]*self.spacing[1]
-            self.areaquart[i,2] = len(q3)*self.spacing[0]*self.spacing[1]
-            self.areaquart[i,3] = len(q4)*self.spacing[0]*self.spacing[1]
+            try:
+                self.areaquart[i,0] = len(q1)*self.spacing[0]*self.spacing[1]
+                self.areaquart[i,1] = len(q2)*self.spacing[0]*self.spacing[1]
+                self.areaquart[i,2] = len(q3)*self.spacing[0]*self.spacing[1]
+                self.areaquart[i,3] = len(q4)*self.spacing[0]*self.spacing[1]
+            except:
+                self.areaquart[i,0] = self.areaquart[i,1] = self.areaquart[i,2] = self.areaquart[i,3] = 0
+                
         return volume
+    
+    def calculate_local_perimeters(self, index):
+        index = int(index)
+        img = self.values[index, :, :, :] # Get the slice of interest
+        img = 255.0 * img # Normalize the values
+        # to be plotted properly on the canvas (uint8)
+        res = img.astype('uint8') # Create RGB image
+        if (np.sum(self._segmentation)>0):  # If segmentation, plot it in red (mask or contours)
+            y_coords, x_coords = np.where(find_boundaries(self._segmentation[index,:,:]==1, mode = 'inner'))
+            y0, x0 = np.mean(y_coords), np.mean(x_coords)
+            
+            coords = np.zeros((len(x_coords),2))
+            coords[:,0] = x_coords
+            coords[:,1] = y_coords
+            
+            try:
+                q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<5/6*pi]).astype(int)
+                q2 = np.array([coords[i,:] for i in range(len(coords)) if 5/6*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<=pi]).astype(int)
+                q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-2/3*pi]).astype(int)))                  
+                q3 = np.array([coords[i,:] for i in range(len(coords)) if -2/3*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/6]).astype(int)
+                q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/6<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
+                q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/3]).astype(int)))
+            except:
+                q1 = q2 = q3 = q4 = 0
+                
+            # try:
+            res = np.zeros_like(img)#img.astype('uint8') # Create RGB image                
+            res[q1[:,1],q1[:,0],0] = 255
+            self.local_perimeters[index,0] = np.count_nonzero(res[:,:,0])*self.spacing[0]*self.spacing[1]
+            
+            res = np.zeros_like(img)#img.astype('uint8') # Create RGB image                
+            res[q2[:,1],q2[:,0],0] = 255
+            self.local_perimeters[index,1] = np.count_nonzero(res[:,:,0])*self.spacing[0]*self.spacing[1]
+    
+            res = np.zeros_like(img)#img.astype('uint8') # Create RGB image                
+            res[q3[:,1],q3[:,0],0] = 255
+            self.local_perimeters[index,2] = np.count_nonzero(res[:,:,0])*self.spacing[0]*self.spacing[1]
 
+            res = np.zeros_like(img)#img.astype('uint8') # Create RGB image                
+            res[q4[:,1],q4[:,0],0] = 255
+            self.local_perimeters[index,3] = np.count_nonzero(res[:,:,0])*self.spacing[0]*self.spacing[1]
     
     def get_segmentation(self):     # Retrieve the segmentation
         return self._segmentation
@@ -157,7 +205,7 @@ class Imager:
                 coords = np.zeros((len(x_coords),2))
                 coords[:,0] = x_coords
                 coords[:,1] = y_coords
-
+                
                 # q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/4<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<3/4*pi]).astype(int)
                 # q2 = np.array([coords[i,:] for i in range(len(coords)) if 3/4*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi]).astype(int)
                 # q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-3/4*pi]).astype(int)))                  
@@ -172,13 +220,16 @@ class Imager:
                 # q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
                 # q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/6]).astype(int)))
                 
-                q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<5/6*pi]).astype(int)
-                q2 = np.array([coords[i,:] for i in range(len(coords)) if 5/6*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<=pi]).astype(int)
-                q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-2/3*pi]).astype(int)))                  
-                q3 = np.array([coords[i,:] for i in range(len(coords)) if -2/3*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/6]).astype(int)
-                q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/6<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
-                q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/3]).astype(int)))
-                
+                try:
+                    q1 = np.array([coords[i,:] for i in range(len(coords)) if pi/3<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<5/6*pi]).astype(int)
+                    q2 = np.array([coords[i,:] for i in range(len(coords)) if 5/6*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<=pi]).astype(int)
+                    q2 = np.concatenate((q2, np.array([coords[i,:] for i in range(len(coords)) if -pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-2/3*pi]).astype(int)))                  
+                    q3 = np.array([coords[i,:] for i in range(len(coords)) if -2/3*pi<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<-pi/6]).astype(int)
+                    q4 = np.array([coords[i,:] for i in range(len(coords)) if -pi/6<np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<0]).astype(int)
+                    q4 = np.concatenate((q4, np.array([coords[i,:] for i in range(len(coords)) if 0<=np.arctan2(coords[i,1]-y0, coords[i,0]-x0)<pi/3]).astype(int)))
+                except:
+                    q1 = q2 = q3 = q4 = 0
+                    
                 try:
                     res[q1[:,1],q1[:,0],0] = 255
                     res[q2[:,1],q2[:,0],1] = 255

@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onefile --console --hidden-import "pydicom.encoders.pylibjpeg" --hidden-import "tensorflow._api.v2.compat" --hidden-import "pydicom.encoders.gdcm" --hidden-import "skimage.filters.edges" --add-data "D:/Vibot/aorta-compliance/Aorta UI/model.h5;."  "D:/Vibot/aorta-compliance/Aorta UI/main_window.py"

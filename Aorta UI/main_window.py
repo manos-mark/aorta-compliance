@@ -222,9 +222,11 @@ class MainWindow(Frame):
             # self.compliance[4] = (self.imager.areaquart[:,3].max() - self.imager.areaquart[:,3].min()) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
 
         if not self.split_quarters_status.get():
-            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} ")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.global_perimeters.mean():.1f}, {self.imager.global_perimeters.min():.1f}, {self.imager.global_perimeters.max():.1f} ")
         else:
-            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f}")
+            # self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f}")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f} \n Posterior per: {self.imager.local_perimeters[:, 0].mean()} \n Lateral per: {self.imager.local_perimeters[:, 1].mean()} \n Anterior per: {self.imager.local_perimeters[:, 2].mean()} \n Medial per: {self.imager.local_perimeters[:, 3].mean()}")
+
         self.result_label.grid(row=0, column=1, sticky='s')
 
     def show_contours_action(self): # Checker tickbox
@@ -548,8 +550,23 @@ class MainWindow(Frame):
             df = pd.DataFrame(np.concatenate((self.imager.areaquart, np.reshape(self.imager.area, self.imager.area.shape+(1,))),axis=1), columns=['Posterior', 'Lateral', 'Anterior', 'Medial', 'Global'])
             df.to_csv(os.path.join(filename, self.filename + '_compliance_curves.csv'), index=False, header=True)
             
-            data = np.array([ [self.compliance[0]], [self.compliance[1]], [self.compliance[2]], [self.compliance[3]], [self.compliance[4]], [self.imager.area.min()], [self.imager.area.max()], [self.imager.perimeters.min()], [self.imager.perimeters.max()], [self.imager.perimeters.mean()] ]).T
-            df = pd.DataFrame(data, columns=['compliance_pred', 'posterior', 'lateral', 'anterior', 'medial', 'min_area_pred', 'max_area_pred', 'min_perimeter', 'max_perimeter', 'mean_perimeter' ])
+            data = np.array([ 
+                [self.compliance[0]], [self.compliance[1]], [self.compliance[2]], [self.compliance[3]], [self.compliance[4]], 
+                [self.imager.area.min()], [self.imager.area.max()], [self.imager.global_perimeters.mean()], 
+                [self.imager.local_perimeters[:,0].mean()], [self.imager.local_perimeters[:,1].mean()], 
+                [self.imager.local_perimeters[:,2].mean()], [self.imager.local_perimeters[:,3].mean()], 
+                [self.imager.local_perimeters[:,0].min()], [self.imager.local_perimeters[:,1].min()], 
+                [self.imager.local_perimeters[:,2].min()], [self.imager.local_perimeters[:,3].min()],
+                [self.imager.local_perimeters[:,0].max()], [self.imager.local_perimeters[:,1].max()], 
+                [self.imager.local_perimeters[:,2].max()], [self.imager.local_perimeters[:,3].max()]
+                             
+            ]).T
+            df = pd.DataFrame(data, columns=['global_compliance', 'posterior_compliance', 'lateral_compliance', 
+                                             'anterior_compliance', 'medial_compliance', 'min_area_pred', 'max_area_pred', 
+                                             'global_perimeter', 'posterior_perimeter', 'lateral_perimeter', 
+                                             'anterior_perimeter', 'medial_perimeter', 'posterior_perimeter_min', 'lateral_perimeter_min', 
+                                             'anterior_perimeter_min', 'medial_perimeter_min', 'posterior_perimeter_max', 'lateral_perimeter_max', 
+                                             'anterior_perimeter_max', 'medial_perimeter_max' ])
             df.to_csv(os.path.join(filename, self.filename + '_results.csv'), index=False, header=True)
             
             self.figure.savefig(os.path.join(filename, self.filename + '_figure.png'))
