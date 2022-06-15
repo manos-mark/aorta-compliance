@@ -86,6 +86,7 @@ class MainWindow(Frame):
         self.convex_hull_status = BooleanVar()
         self.correct_cog_status = BooleanVar()
         self.compliance = np.zeros(shape=(5,))
+        self.strain = np.zeros(shape=(4,))
         self.systolic_pressure = StringVar(value='130')
         self.diastolic_pressure = StringVar(value='80')
         self.result = StringVar()
@@ -194,7 +195,7 @@ class MainWindow(Frame):
             plot.axes.get_xaxis().set_visible(False)
 
             plot = figure.add_subplot(414)
-            plot.plot(self.imager.areaquart[:,3], color="yellow", label="Medial")
+            plot.plot(self.imager.areaquart[:,3], color="orange", label="Medial")
             plot.set_ylim(np.min(self.imager.areaquart[:,3])-offset, np.max(self.imager.areaquart[:,3])+offset)
             plot.legend(loc="upper right")
 
@@ -212,20 +213,36 @@ class MainWindow(Frame):
         self.compliance[0] = (max_area - min_area) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
         
         for i in range(1,5): 
-            quarter_areas = self.imager.areaquart[:,i-1]
+            quarter_areas = self.imager.areaquart[:, i-1]            
             if np.count_nonzero(quarter_areas) > 0:
                 min_quarter_area = np.min(quarter_areas[np.nonzero(quarter_areas)])
                 max_quarter_area = np.max(quarter_areas[np.nonzero(quarter_areas)])
                 self.compliance[i] = (max_quarter_area - min_quarter_area) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
+        
+        for i in range(0,4):
+            quarter_perimeter = self.imager.local_perimeters[:, i]
+            # if np.count_nonzero(quarter_perimeter) > 0:    
+            #     min_perimeter = np.min(quarter_perimeter[np.nonzero(quarter_perimeter)])
+            #     max_perimeter = np.max(quarter_perimeter[np.nonzero(quarter_perimeter)])
+            self.strain[i] = (quarter_perimeter.max() - quarter_perimeter.min()) / quarter_perimeter.min()  
+            
             # self.compliance[2] = (self.imager.areaquart[:,1].max() - self.imager.areaquart[:,1].min()) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
             # self.compliance[3] = (self.imager.areaquart[:,2].max() - self.imager.areaquart[:,2].min()) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
             # self.compliance[4] = (self.imager.areaquart[:,3].max() - self.imager.areaquart[:,3].min()) / (int(self.systolic_pressure.get()) - int(self.diastolic_pressure.get()))
 
         if not self.split_quarters_status.get():
-            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.global_perimeters.mean():.1f}, {self.imager.global_perimeters.min():.1f}, {self.imager.global_perimeters.max():.1f} ")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f}")
         else:
             # self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Avg, Min, Max Perimeters: {self.imager.perimeters.mean():.1f}, {self.imager.perimeters.min():.1f}, {self.imager.perimeters.max():.1f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f}")
-            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n Posterior: {self.compliance[1]:.4f} \n Lateral: {self.compliance[2]:.4f} \n Anterior: {self.compliance[3]:.4f} \n Medial: {self.compliance[4]:.4f} \n Posterior per: {self.imager.local_perimeters[:, 0].mean()} \n Lateral per: {self.imager.local_perimeters[:, 1].mean()} \n Anterior per: {self.imager.local_perimeters[:, 2].mean()} \n Medial per: {self.imager.local_perimeters[:, 3].mean()}")
+            self.result.set(f" Global compliance: {self.compliance[0]:.4f} \n \
+                            Posterior compliance: {self.compliance[1]:.4f} \n \
+                            Lateral compliance: {self.compliance[2]:.4f} \n \
+                            Anterior compliance: {self.compliance[3]:.4f} \n \
+                            Medial compliance: {self.compliance[4]:.4f} \n \n \
+                            Posterior strain: {self.strain[0]} \n \
+                            Lateral strain: {self.strain[1]} \n \
+                            Anterior strain: {self.strain[2]} \n \
+                            Medial strain: {self.strain[3]}")\
 
         self.result_label.grid(row=0, column=1, sticky='s')
 
@@ -552,21 +569,15 @@ class MainWindow(Frame):
             
             data = np.array([ 
                 [self.compliance[0]], [self.compliance[1]], [self.compliance[2]], [self.compliance[3]], [self.compliance[4]], 
-                [self.imager.area.min()], [self.imager.area.max()], [self.imager.global_perimeters.mean()], 
-                [self.imager.local_perimeters[:,0].mean()], [self.imager.local_perimeters[:,1].mean()], 
-                [self.imager.local_perimeters[:,2].mean()], [self.imager.local_perimeters[:,3].mean()], 
-                [self.imager.local_perimeters[:,0].min()], [self.imager.local_perimeters[:,1].min()], 
-                [self.imager.local_perimeters[:,2].min()], [self.imager.local_perimeters[:,3].min()],
-                [self.imager.local_perimeters[:,0].max()], [self.imager.local_perimeters[:,1].max()], 
-                [self.imager.local_perimeters[:,2].max()], [self.imager.local_perimeters[:,3].max()]
+                [self.imager.area.min()], [self.imager.area.max()],  
+                [self.strain[0]], [self.strain[1]], [self.strain[2]], [self.strain[3]], 
                              
             ]).T
             df = pd.DataFrame(data, columns=['global_compliance', 'posterior_compliance', 'lateral_compliance', 
                                              'anterior_compliance', 'medial_compliance', 'min_area_pred', 'max_area_pred', 
-                                             'global_perimeter', 'posterior_perimeter', 'lateral_perimeter', 
-                                             'anterior_perimeter', 'medial_perimeter', 'posterior_perimeter_min', 'lateral_perimeter_min', 
-                                             'anterior_perimeter_min', 'medial_perimeter_min', 'posterior_perimeter_max', 'lateral_perimeter_max', 
-                                             'anterior_perimeter_max', 'medial_perimeter_max' ])
+                                             'posterior_strain', 'lateral_strain', 
+                                             'anterior_strain', 'medial_strain'])
+            
             df.to_csv(os.path.join(filename, self.filename + '_results.csv'), index=False, header=True)
             
             self.figure.savefig(os.path.join(filename, self.filename + '_figure.png'))
