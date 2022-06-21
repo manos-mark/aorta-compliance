@@ -28,7 +28,7 @@ class SegmentationNetwork():
         results = self.model.predict(img_tf, batch_size=1)
         # Postprocess of the predicion
         results = self.recover_shape(volume, results)
-        results = np.squeeze(results>0.1)*1.0
+        results = np.squeeze(results>0.5)*1.0
         return results
 
     def prepare_for_net(self, img): # Preprocessing needed before the Model Inference
