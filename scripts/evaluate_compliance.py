@@ -103,11 +103,11 @@ def segment_aorta(model, image, display=False):
 
 
 if __name__ == '__main__':
-    EXPERIMENT = 'res-unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield/1'
+    EXPERIMENT = 'unet-diana_healthy_marfan-lr_0.001-batch_8-augmented-instance_normalization-polygon2mask-Kfield/4'
 
     """ File paths """
-    excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020.xlsx')
-    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'diana_segmented')
+    excel_path = os.path.join('..', 'dataset', 'Diana_Compliance_Dec2020_2.xlsx')
+    DATASET_FOLDER_PATH = os.path.join('..', 'dataset', 'healthy_segmented')
     patient_ids = os.listdir(DATASET_FOLDER_PATH)
     
     experiment_results_folder_path = os.path.join('..', 'results', EXPERIMENT)
@@ -161,19 +161,19 @@ if __name__ == '__main__':
             H,W = ((dcmread(image_path)).pixel_array).shape
             
             """ Segment aorta if it's not already segmented """
-            if len(masks) == 0: # TODO make this len(masks) != len(image_paths)
+            # if len(masks) == 0: # TODO make this len(masks) != len(image_paths)
                                 # now it will give error because we have multiple
                                 # scans for each patient
                                 
-                aorta = segment_aorta(model, image)
-                aorta = crop_and_pad(aorta[:,:,0], H,W)
-                img = np.zeros((aorta.shape[0], aorta.shape[1], 3))
-                img[:,:,0] = img[:,:,1] = img[:,:,2] = aorta[:,:]
-                plt.imsave(os.path.join(masks_output_folder_path, mask_name), img, cmap='gray')
+            aorta = segment_aorta(model, image)
+            aorta = crop_and_pad(aorta[:,:,0], H,W)
+            img = np.zeros((aorta.shape[0], aorta.shape[1], 3))
+            img[:,:,0] = img[:,:,1] = img[:,:,2] = aorta[:,:]
+            plt.imsave(os.path.join(masks_output_folder_path, mask_name), img, cmap='gray')
             
-            else:
-                aorta = read_mask(os.path.join(masks_output_folder_path, mask_name))
-                aorta = crop_and_pad(aorta[:,:,0], H,W)
+            # else:
+            #     aorta = read_mask(os.path.join(masks_output_folder_path, mask_name))
+            #     aorta = crop_and_pad(aorta[:,:,0], H,W)
                 
             image = crop_and_pad(image[:,:,0], H,W)
             
@@ -204,15 +204,15 @@ if __name__ == '__main__':
         plt.clf()
         
         """ Plot area over time """
-        fig = plt.figure(figsize=(15,15))
-        plt.subplot(title='Area over time')
-        plt.plot(area_per_slice)
-        plt.xlabel('Slices')
-        plt.ylabel('Area')
-        plt.ylim(np.min(area_per_slice)-200, np.max(area_per_slice)+200)
-#        plt.show()
-        plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
-        plt.clf()
+#         fig = plt.figure(figsize=(15,15))
+#         plt.subplot(title='Area over time')
+#         plt.plot(area_per_slice)
+#         plt.xlabel('Slices')
+#         plt.ylabel('Area')
+#         plt.ylim(np.min(area_per_slice)-200, np.max(area_per_slice)+200)
+# #        plt.show()
+#         plt.savefig(os.path.join(patient_output_folder_path, 'predicted_area_over_time.jpg' ))
+#         plt.clf()
         
         """ Get the minimum and maximum areas across all slices """   
         area_std = np.std(area_per_slice)     
@@ -231,24 +231,24 @@ if __name__ == '__main__':
         print('Original min, max areas : ', original_min, original_max)
         print('Predicted min, max areas: ', min_area, max_area)
 
-        original_min_areas.append(original_min)
-        original_max_areas.append(original_max)
-        predicted_min_areas.append(min_area)
-        predicted_max_areas.append(max_area)
-        
-        
         """ Compute global ascending compliance """
         predicted_compliance = compute_compliance(min_area, max_area, syst_press, diast_press)
-        predicted_compliances.append(predicted_compliance)
         print('Original ascending compliance ', original_compliance)
         print('Predicted ascending compliance', predicted_compliance)
         
         """ Compute global ascending distensibility """
         predicted_distensibility = compute_distensibility(predicted_compliance, min_area)
-        predicted_distensibilities.append(predicted_distensibility)
         print('Original ascending distensibility ', original_distensibility)
         print('Predicted ascending distensibility', predicted_distensibility)
-            
+        
+        if predicted_compliance < 6:            
+            original_min_areas.append(original_min)
+            original_max_areas.append(original_max)
+            predicted_min_areas.append(min_area)
+            predicted_max_areas.append(max_area)
+            predicted_distensibilities.append(predicted_distensibility)
+            predicted_compliances.append(predicted_compliance)
+        
         """ Save results to file """
         df = pd.DataFrame([{
                 'patient_id': patient_id,
