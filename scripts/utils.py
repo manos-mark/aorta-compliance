@@ -73,7 +73,7 @@ def data_augmentation(image, mask, img_size):
     def _data_augmentation(image, mask, img_size):
         transforms = Compose([
             Rotate(limit=20),
-            RandomBrightnessContrast(),
+            # RandomBrightnessContrast(),
             HorizontalFlip(),
             VerticalFlip(),
             Affine(scale=(0.9, 1.2)),
@@ -93,20 +93,20 @@ def data_augmentation(image, mask, img_size):
     return aug_img, aug_mask
 
 def load_data(path, split=0.2):
-    # images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
-    images = natsorted(glob(os.path.join(path, "images", "*.npy")))
+    images = natsorted(glob(os.path.join(path, "images", "*.dcm")))
+    # images = natsorted(glob(os.path.join(path, "images", "*.npy")))
     if len(images) == 0:
         images = natsorted(glob(os.path.join(path, "images", "*.nii.gz")))
-    # masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
-    masks = natsorted(glob(os.path.join(path, "masks", "*.npy")))
+    masks = natsorted(glob(os.path.join(path, "masks", "*.png")))
+    # masks = natsorted(glob(os.path.join(path, "masks", "*.npy")))
     
-    return train_test_split(images, masks, split)
+    return train_val_test_split(images, masks, split)
 
 def read_image(path):
-    # dcm = pydicom.dcmread(path)
-    # x = dcm.pixel_array
+    dcm = pydicom.dcmread(path)
+    x = dcm.pixel_array
     # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = np.load(path)
+    # x = np.load(path)
     x = contrast_stretching(x)
     x = crop_and_pad(x, H, W)
     x = (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -128,8 +128,8 @@ def read_image(path):
     return x
 
 def read_mask(path):
-    # x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    x = np.load(path)
+    x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    # x = np.load(path)
     x = crop_and_pad(x, H, W)
     # x = x/np.max(x)
     x = (x - np.min(x)) / (np.max(x) - np.min(x))
