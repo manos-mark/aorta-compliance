@@ -13,3 +13,7 @@ __pycache__/
 /results
 /Aorta UI/env/
 /Aorta UI/output/
+/Aorta UI/build/
+/Aorta UI/dist/
+*.pptx
+*.pdf
