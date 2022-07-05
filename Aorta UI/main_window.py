@@ -590,6 +590,12 @@ class MainWindow(Frame):
 def main():
     root = Tk() # Create GUI object
     root.state('zoomed')
+    
+    # Just simply import the azure.tcl file
+    root.tk.call("source", "azure.tcl")
+    # Then set the theme you want with the set_theme procedure
+    root.tk.call("set_theme", "light")
+    
     # w, h = root.winfo_screenwidth(), root.winfo_screenheight()
     # root.minsize(600, 400)  # Define min size of the window
     # root.geometry("%dx%d+0+0" % (w, h))
